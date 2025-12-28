@@ -1,324 +1,67 @@
-<!doctype html>
-<html lang="he" dir="rtl">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>חיפוש + שקלול אחוזי נכות</title>
-
-  <style>
-    :root{ --bd:#e7e7e7; --bg:#fafafa; --card:#fff; }
-    *{ box-sizing:border-box; }
-    body{ margin:0; padding:16px; font-family:Arial, sans-serif; background:var(--bg); }
-    .wrap{ max-width:1150px; margin:0 auto; }
-    h1{ margin:0 0 6px; font-size:28px; }
-    #ver{ opacity:.7; margin:0 0 14px; }
-
-    .grid{ display:flex; gap:14px; flex-wrap:wrap; align-items:flex-start; }
-    .card{ background:var(--card); border:1px solid var(--bd); border-radius:18px; padding:14px; }
-    .left{ flex:1 1 680px; }
-    .right{ flex:0 0 380px; }
-
-    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
-    input, select{ padding:12px; border:1px solid #ccc; border-radius:12px; font-size:16px; }
-    input{ flex:1 1 320px; font-size:18px; }
-    select{ flex:0 0 240px; }
-    button{ padding:10px 12px; border:1px solid #ccc; border-radius:12px; background:#fff; cursor:pointer; font-size:15px; }
-    button:active{ transform:scale(.99); }
-
-    .status{ margin:10px 2px; opacity:.85; }
-    .muted{ opacity:.75; }
-
-    .result{ border:1px solid #ededed; border-radius:18px; padding:12px; margin:10px 0; }
-    .resultTop{ display:flex; justify-content:space-between; gap:12px; align-items:flex-start; }
-    .title{ font-weight:900; font-size:18px; line-height:1.2; }
-    .subtitle{ margin-top:6px; font-weight:700; opacity:.95; }
-    .meta{ margin-top:10px; line-height:1.6; opacity:.9; }
-    .pct{ font-weight:900; font-size:18px; white-space:nowrap; }
-
-    .miniBtns{ display:flex; gap:8px; align-items:center; }
-    .plusBtn{ padding:6px 10px; border-radius:10px; }
-
-    .cartBox{ border:1px dashed #ddd; border-radius:16px; padding:12px; margin-top:10px; }
-    .big{ font-size:28px; font-weight:900; }
-    .cartItem{ border:1px solid #eee; border-radius:14px; padding:10px; margin:8px 0; }
-    .cartItemTop{ display:flex; justify-content:space-between; gap:10px; }
-  </style>
-</head>
-
-<body>
-  <div class="wrap">
-    <h1>חיפוש + שקלול אחוזי נכות</h1>
-    <div id="ver"></div>
-
-    <div class="grid">
-      <!-- חיפוש -->
-      <div class="card left">
-        <div class="row">
-          <input id="search" placeholder="חיפוש: מחלה / תת־מחלה / תנאי / מערכת…" />
-          <select id="systemFilter">
-            <option value="">כל המערכות</option>
-          </select>
-          <button id="clearBtn">ניקוי</button>
-        </div>
-
-        <div class="status" id="status">טוען נתונים…</div>
-        <div id="results"></div>
-      </div>
-
-      <!-- מחשבון -->
-      <div class="card right">
-        <div class="row" style="justify-content:space-between;">
-          <div style="font-weight:900; font-size:20px;">מחשבון שקלול</div>
-          <div class="muted" id="cartMeta">נבחרו 0</div>
-        </div>
-
-        <div class="cartBox">
-          <div class="muted">תוצאה משוקללת</div>
-          <div class="big" id="totalPct">—</div>
-          <div class="muted" id="totalPctRounded"></div>
-        </div>
-
-        <div id="cartList"></div>
-
-        <button id="clearCart" style="width:100%; margin-top:10px;">איפוס רשימה</button>
-        <button id="copySummary" style="width:100%; margin-top:8px;">העתק תוצאה</button>
-      </div>
-    </div>
-  </div>
-
-<script>
-  // חותמת גרסה כדי לוודא שהקוד החדש נטען
-  document.getElementById('ver').textContent = "גרסה: " + new Date().toLocaleString();
-
-  // --- Helpers ---
-  const safe = v => (v === null || v === undefined) ? "" : String(v);
-  const norm = s => safe(s).trim().toLowerCase();
-
-  // ✅ קריטי: ממיר שבר לאחוז
-  // 0.3 => 30, 0.5 => 50, 30 => 30
-  function toPercentNumber(v){
-    const n = Number(v);
-    if(!Number.isFinite(n)) return null;
-    if(n > 0 && n < 1) return n * 100;
-    return n;
+async function loadData() {
+  try {
+    const res = await fetch("disability_table.json");
+    window.disabilityData = await res.json();
+  } catch {
+    window.disabilityData = [];
   }
+}
 
-  // שקלול ביטוח לאומי: t = t + p*(100-t)/100
-  function calcCombined(percsSortedDesc){
-    let t = 0;
-    for (const p of percsSortedDesc){
-      t = t + (p * (100 - t) / 100);
-    }
-    return t;
+function searchDisease(term) {
+  if (!window.disabilityData) return [];
+  const t = term.trim().toLowerCase();
+  return window.disabilityData.filter(x =>
+    x.disease.toLowerCase().includes(t) ||
+    (x.subtitle && x.subtitle.toLowerCase().includes(t))
+  );
+}
+
+function toPercentNumber(v) {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return null;
+  if (n > 0 && n < 1) return n * 100;
+  return n;
+}
+
+function calculateCombined(ps) {
+  if (!Array.isArray(ps)) return 0;
+  const nums = ps.map(toPercentNumber).filter(x => x !== null && x >= 0);
+  if (!nums.length) return 0;
+  nums.sort((a, b) => b - a);
+  let comb = nums[0];
+  for (let i = 1; i < nums.length; i++) {
+    comb = comb + (100 - comb) * (nums[i] / 100);
   }
+  return comb;
+}
 
-  // --- DOM ---
-  const statusEl = document.getElementById('status');
-  const resultsEl = document.getElementById('results');
-  const searchEl = document.getElementById('search');
-  const systemEl = document.getElementById('systemFilter');
-  const clearBtn = document.getElementById('clearBtn');
-
-  const cartMetaEl = document.getElementById('cartMeta');
-  const cartListEl = document.getElementById('cartList');
-  const totalPctEl = document.getElementById('totalPct');
-  const totalPctRoundedEl = document.getElementById('totalPctRounded');
-  const clearCartBtn = document.getElementById('clearCart');
-  const copySummaryBtn = document.getElementById('copySummary');
-
-  // --- Data ---
-  let DATA = [];
-  let CART = [];
-  let nextId = 1;
-
-  const DATA_FILE = './disability_table.json';
-
-  fetch(DATA_FILE, { cache: "no-store" })
-    .then(r => {
-      if(!r.ok) throw new Error("לא נטען JSON (סטטוס " + r.status + ")");
-      return r.json();
-    })
-    .then(data => {
-      DATA = Array.isArray(data) ? data : [];
-      statusEl.textContent = `נטענו ${DATA.length} רשומות`;
-
-      // פילטר מערכות
-      const set = new Set();
-      DATA.forEach(x => {
-        const s = safe(x.system).trim();
-        if(s) set.add(s);
-      });
-      const systems = Array.from(set).sort((a,b)=>a.localeCompare(b,'he'));
-      systemEl.innerHTML =
-        `<option value="">כל המערכות</option>` +
-        systems.map(s => `<option value="${s}">${s}</option>`).join("");
-
-      render();
-    })
-    .catch(err => {
-      statusEl.textContent = "שגיאה בטעינת הנתונים: " + err.message;
-    });
-
-  function render(){
-    const q = norm(searchEl.value);
-    const sysFilter = norm(systemEl.value);
-
-    if(!q && !sysFilter){
-      resultsEl.innerHTML = `<div class="muted" style="margin-top:10px;">הקלידי כדי לחפש</div>`;
-      return;
-    }
-
-    const filtered = DATA.filter(x => {
-      const sys = norm(x.system);
-      if(sysFilter && sys !== sysFilter) return false;
-      if(!q) return true;
-
-      const blob = (
-        safe(x.disease) + " " +
-        safe(x.sub_disease) + " " +
-        safe(x.condition) + " " +
-        safe(x.system)
-      ).toLowerCase();
-
-      return blob.includes(q);
-    });
-
-    const out = filtered.slice(0, 200);
-
-    resultsEl.innerHTML = out.length ? out.map((x, idx) => {
-      const p = toPercentNumber(x.percent);
-      const pctText = (p === null) ? "—" : (Math.round(p) + "%");
-
-      // ✅ כמו שביקשת: מחלה ראשית למעלה, תת־מחלה למטה
-      const main = safe(x.disease).trim();
-      const sub  = safe(x.sub_disease).trim();
-
-      return `
-        <div class="result">
-          <div class="resultTop">
-            <div style="flex:1 1 auto;">
-              <div class="title">${main || "—"}</div>
-              ${sub ? `<div class="subtitle">${sub}</div>` : ``}
-
-              <div class="meta">
-                <div><b>מערכת:</b> ${safe(x.system)}</div>
-                <div><b>תנאי:</b> ${safe(x.condition)}</div>
-              </div>
-            </div>
-
-            <div style="flex:0 0 auto; text-align:left;">
-              <div class="miniBtns">
-                <div class="pct">${pctText}</div>
-                <button class="plusBtn" data-add="${idx}">➕</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
-    }).join("") : `<div class="muted" style="margin-top:10px;">לא נמצאו תוצאות</div>`;
-
-    // לחיצה על ➕
-    document.querySelectorAll('[data-add]').forEach(btn => {
-      btn.onclick = () => {
-        const i = Number(btn.getAttribute('data-add'));
-        const row = out[i];
-        if(!row) return;
-
-        const p = toPercentNumber(row.percent);
-        if(p === null){
-          alert("אין אחוז תקין לשורה הזאת");
-          return;
-        }
-
-        CART.push({
-          id: nextId++,
-          disease: safe(row.disease).trim(),
-          sub: safe(row.sub_disease).trim(),
-          system: safe(row.system).trim(),
-          condition: safe(row.condition).trim(),
-          percent: Math.round(p) // ✅ שומרים 30 ולא 0.3
-        });
-
-        updateCartUI();
-      };
-    });
+function renderResults(list) {
+  const box = document.getElementById("results");
+  if (!box) return;
+  if (!list.length) {
+    box.innerHTML = "<p>לא נמצאו תוצאות</p>";
+    return;
   }
+  box.innerHTML = list.map(x => {
+    const percent = toPercentNumber(x.percent);
+    return `<div class="card">
+      <h3>${x.disease}</h3>
+      ${x.subtitle ? `<p>${x.subtitle}</p>` : ""}
+      ${percent !== null ? `<strong>${percent}% נכות</strong>` : ""}
+    </div>`;
+  }).join("");
+}
 
-  function updateCartUI(){
-    cartMetaEl.textContent = `נבחרו ${CART.length}`;
+document.getElementById("searchBtn").onclick = async () => {
+  const term = document.getElementById("searchInput").value;
+  const found = searchDisease(term);
+  renderResults(found);
+};
 
-    if(CART.length === 0){
-      totalPctEl.textContent = "—";
-      totalPctRoundedEl.textContent = "";
-      cartListEl.innerHTML = "";
-      return;
-    }
+document.getElementById("calcBtn").onclick = () => {
+  const vals = document.getElementById("calcInput").value.split(/[, ]+/);
+  const total = calculateCombined(vals.map(Number));
+  document.getElementById("totalBox").textContent = total.toFixed(1) + "%";
+};
 
-    const ps = CART.map(x => x.percent).sort((a,b)=>b-a);
-    const total = calcCombined(ps);
-
-    totalPctEl.textContent = total.toFixed(1) + "%";
-    totalPctRoundedEl.textContent = "מעוגל: " + Math.round(total) + "%";
-
-    cartListEl.innerHTML = CART.map(x => {
-      const title = x.disease || "—";
-      const sub = x.sub ? `<div class="muted" style="margin-top:4px;">${x.sub}</div>` : "";
-      return `
-        <div class="cartItem">
-          <div class="cartItemTop">
-            <div style="flex:1 1 auto;">
-              <div style="font-weight:900;">${title}</div>
-              ${sub}
-              <div class="muted" style="margin-top:6px;"><b>${x.percent}%</b> • ${x.system}</div>
-            </div>
-            <div style="flex:0 0 auto;">
-              <button data-remove="${x.id}">הסר</button>
-            </div>
-          </div>
-        </div>
-      `;
-    }).join("");
-
-    document.querySelectorAll('[data-remove]').forEach(btn => {
-      btn.onclick = () => {
-        const id = Number(btn.getAttribute('data-remove'));
-        CART = CART.filter(x => x.id !== id);
-        updateCartUI();
-      };
-    });
-  }
-
-  clearBtn.onclick = () => {
-    searchEl.value = "";
-    systemEl.value = "";
-    render();
-  };
-
-  clearCartBtn.onclick = () => {
-    CART = [];
-    updateCartUI();
-  };
-
-  copySummaryBtn.onclick = async () => {
-    if(CART.length === 0){
-      alert("אין מה להעתיק");
-      return;
-    }
-    const total = calcCombined(CART.map(x=>x.percent).sort((a,b)=>b-a));
-    const lines = [
-      "מחשבון נכות – גיל גלית יצקן",
-      "סה\"כ נכות משוקלל: " + Math.round(total) + "%",
-      "",
-      "סעיפים שנבחרו:",
-      ...CART.map(x => `- ${x.disease}${x.sub ? " / " + x.sub : ""} — ${x.percent}%`)
-    ];
-    await navigator.clipboard.writeText(lines.join("\n"));
-    alert("הועתק ✅");
-  };
-
-  searchEl.addEventListener('input', render);
-  systemEl.addEventListener('change', render);
-</script>
-
-</body>
-</html>
+loadData();
