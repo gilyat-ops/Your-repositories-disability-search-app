@@ -1,4 +1,67 @@
 <!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>חיפוש אחוזי נכות</title>
+</head>
+<body style="font-family: Arial; padding: 16px;">
+  <h2 style="margin-top:0;">חיפוש אחוזי נכות</h2>
+
+  <input id="search" placeholder="הקלד מחלה / תת-מחלה / תנאי…" 
+         style="width:100%;padding:12px;font-size:18px;box-sizing:border-box"/>
+
+  <div id="status" style="margin:12px 0; opacity:0.8;"></div>
+  <div id="results"></div>
+
+<script>
+  const statusEl = document.getElementById('status');
+  const resultsEl = document.getElementById('results');
+  const searchEl  = document.getElementById('search');
+
+  function safeStr(v){ return (v === null || v === undefined) ? "" : String(v); }
+
+  fetch('disability_table.json', { cache: "no-store" })
+    .then(r => {
+      if(!r.ok) throw new Error("לא הצלחתי לטעון disability_table.json (סטטוס " + r.status + ")");
+      return r.json();
+    })
+    .then(data => {
+      statusEl.textContent = "נטענו " + data.length + " רשומות ✅";
+      
+      function render(q){
+        const query = safeStr(q).trim().toLowerCase();
+        if(!query){
+          resultsEl.innerHTML = "<div style='opacity:0.7'>הקלידי משהו כדי לחפש.</div>";
+          return;
+        }
+
+        const filtered = data.filter(x => {
+          const disease    = safeStr(x.disease).toLowerCase();
+          const subDisease = safeStr(x.sub_disease).toLowerCase();
+          const condition  = safeStr(x.condition).toLowerCase();
+          const system     = safeStr(x.system).toLowerCase();
+          return (disease + " " + subDisease + " " + condition + " " + system).includes(query);
+        }).slice(0, 200);
+
+        if(filtered.length === 0){
+          resultsEl.innerHTML = "<div style='opacity:0.7'>לא נמצאו תוצאות.</div>";
+          return;
+        }
+
+        resultsEl.innerHTML = filtered.map(x => {
+          const disease = safeStr(x.disease);
+          const sub     = safeStr(x.sub_disease);
+          const cond    = safeStr(x.condition);
+          const sys     = safeStr(x.system);
+          const pctVal  = safeStr(x.percent);
+          const pct     = (pctVal === "" ? "—" : (pctVal + "%"));
+
+          const title = [disease, (sub && sub !== "—") ? sub : ""].filter(Boolean).join(" • ");
+
+          return `
+            <div
+<!DOCTYPE html>
 <html dir="rtl">
 <head>
 <meta charset="UTF-8"/>
