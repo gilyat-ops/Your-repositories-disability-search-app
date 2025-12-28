@@ -3,29 +3,72 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>חיפוש אחוזי נכות</title>
+  <title>חיפוש + שקלול אחוזי נכות</title>
 </head>
-<body style="font-family: Arial; padding: 16px; max-width: 900px; margin: 0 auto;">
-  <h2 style="margin:0 0 10px 0;">חיפוש אחוזי נכות</h2>
+<body style="font-family: Arial; padding: 16px; max-width: 1000px; margin: 0 auto; background:#fafafa;">
+  <h2 style="margin:0 0 10px 0;">חיפוש + שקלול אחוזי נכות</h2>
 
-  <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-    <input id="search"
-           placeholder="הקלד מחלה / תת-מחלה / תנאי…"
-           style="flex: 1 1 280px; padding:12px; font-size:18px; box-sizing:border-box; border:1px solid #ccc; border-radius:12px;"/>
+  <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-start;">
+    <!-- חיפוש -->
+    <div style="flex: 1 1 520px; background:#fff; border:1px solid #e6e6e6; border-radius:16px; padding:14px;">
+      <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+        <input id="search"
+               placeholder="הקלד מחלה / תת-מחלה / תנאי / מערכת…"
+               style="flex:1 1 260px; padding:12px; font-size:18px; box-sizing:border-box; border:1px solid #ccc; border-radius:12px;"/>
 
-    <select id="systemFilter"
-            style="flex: 0 0 220px; padding:12px; font-size:16px; border:1px solid #ccc; border-radius:12px;">
-      <option value="">כל המערכות</option>
-    </select>
+        <select id="systemFilter"
+                style="flex:0 0 220px; padding:12px; font-size:16px; border:1px solid #ccc; border-radius:12px;">
+          <option value="">כל המערכות</option>
+        </select>
 
-    <button id="clearBtn"
-            style="padding:12px 14px; font-size:16px; border:1px solid #ccc; border-radius:12px; background:#fff; cursor:pointer;">
-      ניקוי
-    </button>
+        <button id="clearBtn"
+                style="padding:12px 14px; font-size:16px; border:1px solid #ccc; border-radius:12px; background:#fff; cursor:pointer;">
+          ניקוי
+        </button>
+      </div>
+
+      <div id="status" style="margin:10px 2px; opacity:0.85;">טוען נתונים…</div>
+      <div id="results"></div>
+    </div>
+
+    <!-- מחשבון -->
+    <div style="flex: 0 0 360px; background:#fff; border:1px solid #e6e6e6; border-radius:16px; padding:14px;">
+      <h3 style="margin:0 0 10px 0;">🧮 מחשבון שקלול</h3>
+
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <div style="opacity:0.8;">נוסחה:</div>
+        <code style="background:#f3f3f3; padding:6px 8px; border-radius:10px;">
+          total = total + p*(100-total)/100
+        </code>
+      </div>
+
+      <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+        <button id="clearCart"
+                style="flex:1; padding:12px; border:1px solid #ccc; border-radius:12px; background:#fff; cursor:pointer;">
+          🧹 איפוס רשימה
+        </button>
+        <button id="copySummary"
+                style="flex:1; padding:12px; border:1px solid #ccc; border-radius:12px; background:#fff; cursor:pointer;">
+          📋 העתק סיכום
+        </button>
+      </div>
+
+      <div id="cartMeta" style="margin-top:12px; font-weight:700;"></div>
+      <div id="cartList" style="margin-top:10px;"></div>
+
+      <div style="margin-top:12px; padding:12px; border:1px dashed #ddd; border-radius:14px;">
+        <div style="font-size:14px; opacity:0.85;">תוצאה משוקללת</div>
+        <div style="display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin-top:6px;">
+          <div style="font-size:18px; font-weight:900;" id="totalPct">—</div>
+          <div style="font-size:14px; opacity:0.85;" id="totalPctRounded"></div>
+        </div>
+      </div>
+
+      <div style="margin-top:10px; font-size:13px; opacity:0.8;">
+        טיפ: השקלול עובד הכי נכון כשמוסיפים כמה סעיפים, והוא תמיד יוצא ≤ 100%.
+      </div>
+    </div>
   </div>
-
-  <div id="status" style="margin:12px 2px; opacity:0.85;"></div>
-  <div id="results"></div>
 
 <script>
   const statusEl = document.getElementById('status');
@@ -34,11 +77,15 @@
   const systemEl  = document.getElementById('systemFilter');
   const clearBtn  = document.getElementById('clearBtn');
 
+  const cartMetaEl = document.getElementById('cartMeta');
+  const cartListEl = document.getElementById('cartList');
+  const totalPctEl = document.getElementById('totalPct');
+  const totalPctRoundedEl = document.getElementById('totalPctRounded');
+  const clearCartBtn = document.getElementById('clearCart');
+  const copySummaryBtn = document.getElementById('copySummary');
+
   const safe = v => (v === null || v === undefined) ? "" : String(v);
   const norm = s => safe(s).trim().toLowerCase();
-
-  let DATA = [];
-  let SYSTEMS = [];
 
   function escapeHtml(str){
     return safe(str)
@@ -49,87 +96,139 @@
       .replaceAll("'","&#039;");
   }
 
-  function highlight(text, q){
-    const t = safe(text);
-    const query = safe(q).trim();
-    if(!query) return escapeHtml(t);
-    // הדגשה פשוטה (לא רג׳קס מסוכן)
-    const lowerT = t.toLowerCase();
-    const lowerQ = query.toLowerCase();
-    const idx = lowerT.indexOf(lowerQ);
-    if(idx === -1) return escapeHtml(t);
-    const before = escapeHtml(t.slice(0, idx));
-    const mid    = escapeHtml(t.slice(idx, idx + query.length));
-    const after  = escapeHtml(t.slice(idx + query.length));
-    return `${before}<mark style="background:#ffe58a; padding:0 2px; border-radius:4px;">${mid}</mark>${after}`;
-  }
+  // --- DATA ---
+  let DATA = [];
+  let SYSTEMS = [];
+
+  // --- CART ---
+  // item = { id, title, system, condition, percent }
+  let CART = [];
+  let nextId = 1;
 
   function buildSystemOptions(){
-    // נקה ושחזר
     const current = systemEl.value;
     systemEl.innerHTML = `<option value="">כל המערכות</option>` + SYSTEMS
       .map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`)
       .join("");
-    // נסה לשמור בחירה
     if(SYSTEMS.includes(current)) systemEl.value = current;
   }
 
-  function toCard(x, q){
-    const disease = safe(x.disease);
-    const sub     = safe(x.sub_disease);
-    const cond    = safe(x.condition);
-    const sys     = safe(x.system);
-    const pctVal  = safe(x.percent);
-    const pct     = pctVal ? (pctVal + "%") : "—";
+  function calcCombinedPercent(percentList){
+    // percentList: array of numbers [p1, p2...]
+    const ps = percentList
+      .map(p => Number(p))
+      .filter(p => Number.isFinite(p) && p > 0)
+      .sort((a,b) => b-a); // מהגבוה לנמוך
 
-    const titleParts = [disease, (sub && sub !== "—") ? sub : ""].filter(Boolean);
-    const title = titleParts.join(" • ");
-
-    // טקסט להעתקה
-    const copyText = `${title || disease || "—"} – ${pct}`;
-
-    return `
-      <div style="border:1px solid #e2e2e2; border-radius:14px; padding:12px; margin:10px 0; background:#fff;">
-        <div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start;">
-          <div style="font-weight:800; font-size:16px; line-height:1.25;">
-            ${highlight(title || "—", q)}
-          </div>
-          <div style="font-weight:900; font-size:18px; white-space:nowrap;">${escapeHtml(pct)}</div>
-        </div>
-
-        <div style="margin-top:8px; opacity:0.85; font-size:14px;">
-          <div><b>מערכת:</b> ${highlight(sys || "—", q)}</div>
-          <div style="margin-top:4px;"><b>תנאי:</b> ${highlight(cond || "—", q)}</div>
-        </div>
-
-        <div style="margin-top:10px; display:flex; justify-content:flex-end;">
-          <button class="copyBtn"
-                  data-copy="${escapeHtml(copyText)}"
-                  style="padding:10px 12px; border:1px solid #ccc; border-radius:12px; background:#fff; cursor:pointer;">
-            📋 העתק
-          </button>
-        </div>
-      </div>
-    `;
+    let total = 0;
+    for(const p of ps){
+      total = total + (p * (100 - total) / 100);
+    }
+    return total; // יכול להיות עם שברים
   }
 
-  function render(){
+  function updateCartUI(){
+    cartMetaEl.textContent = CART.length ? `נבחרו ${CART.length} סעיפים` : "עוד לא נבחרו סעיפים.";
+    const percents = CART.map(x => x.percent);
+    const total = calcCombinedPercent(percents);
+
+    if(!CART.length){
+      totalPctEl.textContent = "—";
+      totalPctRoundedEl.textContent = "";
+      cartListEl.innerHTML = `<div style="opacity:0.7">הוסיפי סעיפים מתוך התוצאות (כפתור ➕).</div>`;
+      return;
+    }
+
+    totalPctEl.textContent = `${total.toFixed(1)}%`;
+    totalPctRoundedEl.textContent = `מעוגל: ${Math.round(total)}%`;
+
+    cartListEl.innerHTML = CART.map(item => `
+      <div style="border:1px solid #eee; border-radius:14px; padding:10px; margin:8px 0; background:#fff;">
+        <div style="display:flex; justify-content:space-between; gap:10px; align-items:flex-start;">
+          <div style="font-weight:800; font-size:14px; line-height:1.25;">
+            ${escapeHtml(item.title || "—")}
+            <div style="font-weight:400; opacity:0.8; margin-top:4px;">
+              ${escapeHtml(item.system || "—")}
+            </div>
+          </div>
+          <div style="text-align:left; white-space:nowrap;">
+            <div style="font-weight:900; font-size:16px;">${escapeHtml(item.percent)}%</div>
+            <button data-remove="${item.id}"
+                    style="margin-top:6px; padding:8px 10px; border:1px solid #ccc; border-radius:12px; background:#fff; cursor:pointer;">
+              ✖ הסר
+            </button>
+          </div>
+        </div>
+        <div style="opacity:0.85; font-size:13px; margin-top:8px;">
+          ${escapeHtml(item.condition || "")}
+        </div>
+      </div>
+    `).join("");
+
+    // remove handlers
+    document.querySelectorAll('[data-remove]').forEach(btn => {
+      btn.onclick = () => {
+        const id = Number(btn.getAttribute('data-remove'));
+        CART = CART.filter(x => x.id !== id);
+        updateCartUI();
+      };
+    });
+  }
+
+  async function copyText(text){
+    try{
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch(e){
+      // fallback
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      return true;
+    }
+  }
+
+  function addToCart(x){
+    const disease = safe(x.disease);
+    const sub     = safe(x.sub_disease);
+    const title = [disease, (sub && sub !== "—") ? sub : ""].filter(Boolean).join(" • ");
+
+    // percent: אצלך כבר 0-100 (בניתי כך את הקובץ)
+    const pct = Number(x.percent);
+    if(!Number.isFinite(pct) || pct <= 0){
+      alert("אין אחוז תקין לשורה הזו.");
+      return;
+    }
+
+    CART.push({
+      id: nextId++,
+      title,
+      system: safe(x.system),
+      condition: safe(x.condition),
+      percent: Math.round(pct) // אפשר לשנות ל-pct אם תרצי לא לעגל סעיפים
+    });
+
+    updateCartUI();
+  }
+
+  // --- SEARCH RENDER ---
+  function renderResults(){
     const q = norm(searchEl.value);
     const sysFilter = norm(systemEl.value);
 
-    // כשהחיפוש ריק — לא להציף
     if(!q && !sysFilter){
       statusEl.textContent = `נטענו ${DATA.length} רשומות ✅ · הקלידי כדי לחפש או בחרי מערכת.`;
       resultsEl.innerHTML = `<div style="opacity:0.7; margin-top:10px;">טיפ: כתבי "ברך" / "טרשת" / "סרטן"…</div>`;
       return;
     }
 
-    // סינון
     let out = DATA.filter(x => {
       const sys = norm(x.system);
       if(sysFilter && sys !== sysFilter) return false;
-
-      if(!q) return true; // רק לפי מערכת
+      if(!q) return true;
 
       const blob = (
         safe(x.disease) + " " +
@@ -137,6 +236,7 @@
         safe(x.condition) + " " +
         safe(x.system)
       ).toLowerCase();
+
       return blob.includes(q);
     });
 
@@ -145,79 +245,117 @@
 
     statusEl.textContent = `נמצאו ${total} תוצאות · מציג עד 200`;
 
-    resultsEl.innerHTML = out.length
-      ? out.map(x => toCard(x, q)).join("")
-      : `<div style="opacity:0.7; margin-top:10px;">לא נמצאו תוצאות.</div>`;
+    resultsEl.innerHTML = out.length ? out.map((x, idx) => {
+      const title = [safe(x.disease), safe(x.sub_disease)].filter(Boolean).join(" • ");
+      const pct = safe(x.percent) ? (safe(x.percent) + "%") : "—";
+      const sys = safe(x.system);
+      const cond = safe(x.condition);
 
-    // חיבור כפתורי העתקה
-    document.querySelectorAll('.copyBtn').forEach(btn => {
-      btn.onclick = async () => {
-        const text = btn.getAttribute('data-copy') || "";
-        try{
-          await navigator.clipboard.writeText(text);
-          const old = btn.textContent;
-          btn.textContent = "✅ הועתק";
-          setTimeout(()=> btn.textContent = old, 900);
-        } catch(e){
-          // fallback
-          const ta = document.createElement('textarea');
-          ta.value = text;
-          document.body.appendChild(ta);
-          ta.select();
-          document.execCommand('copy');
-          document.body.removeChild(ta);
-          const old = btn.textContent;
-          btn.textContent = "✅ הועתק";
-          setTimeout(()=> btn.textContent = old, 900);
-        }
+      // שומרים אינדקס כדי להוסיף לסל
+      return `
+        <div style="border:1px solid #e6e6e6; border-radius:14px; padding:12px; margin:10px 0; background:#fff;">
+          <div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start;">
+            <div style="font-weight:800; font-size:15px;">${escapeHtml(title || "—")}</div>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <div style="font-weight:900; font-size:18px; white-space:nowrap;">${escapeHtml(pct)}</div>
+              <button data-add="${idx}"
+                      style="padding:10px 12px; border:1px solid #ccc; border-radius:12px; background:#fff; cursor:pointer;">
+                ➕
+              </button>
+            </div>
+          </div>
+          <div style="margin-top:6px; opacity:0.85; font-size:13px;"><b>מערכת:</b> ${escapeHtml(sys || "—")}</div>
+          <div style="margin-top:6px; opacity:0.85; font-size:13px;"><b>תנאי:</b> ${escapeHtml(cond || "—")}</div>
+        </div>
+      `;
+    }).join("") : `<div style="opacity:0.7; margin-top:10px;">לא נמצאו תוצאות.</div>`;
+
+    // add handlers (לפי אינדקס בתוך out.slice)
+    // כדי לפשט: נבנה מחדש מערך התוצאות שאנחנו מציגים כרגע
+    const displayed = DATA.filter(x => {
+      const sys = norm(x.system);
+      if(sysFilter && sys !== sysFilter) return false;
+      if(!q) return true;
+      const blob = (safe(x.disease)+" "+safe(x.sub_disease)+" "+safe(x.condition)+" "+safe(x.system)).toLowerCase();
+      return blob.includes(q);
+    }).slice(0, 200);
+
+    document.querySelectorAll('[data-add]').forEach(btn => {
+      btn.onclick = () => {
+        const i = Number(btn.getAttribute('data-add'));
+        const row = displayed[i];
+        if(row) addToCart(row);
       };
     });
   }
 
-  // Debounce קטן שלא יחנוק
+  // debounce
   let t = null;
   function scheduleRender(){
     clearTimeout(t);
-    t = setTimeout(render, 80);
+    t = setTimeout(renderResults, 80);
   }
 
   clearBtn.onclick = () => {
     searchEl.value = "";
     systemEl.value = "";
-    render();
+    renderResults();
     searchEl.focus();
   };
 
-  statusEl.textContent = "טוען נתונים…";
+  clearCartBtn.onclick = () => {
+    CART = [];
+    updateCartUI();
+  };
 
+  copySummaryBtn.onclick = async () => {
+    if(!CART.length){
+      alert("אין סעיפים ברשימה.");
+      return;
+    }
+    const total = calcCombinedPercent(CART.map(x => x.percent));
+    const lines = CART
+      .slice()
+      .sort((a,b)=>b.percent-a.percent)
+      .map(x => `${x.percent}% — ${x.title}`);
+    const summary =
+      `שקלול אחוזי נכות (מצטבר):\n` +
+      lines.join("\n") +
+      `\n\nסה״כ משוקלל: ${total.toFixed(1)}% (מעוגל: ${Math.round(total)}%)`;
+
+    const ok = await copyText(summary);
+    if(ok) alert("הסיכום הועתק ✅");
+  };
+
+  // --- LOAD ---
+  statusEl.textContent = "טוען נתונים…";
   fetch('./disability_table.json', { cache: "no-store" })
     .then(r => {
       if(!r.ok) throw new Error("לא נטען disability_table.json (סטטוס " + r.status + ")");
       return r.json();
     })
     .then(data => {
-      // ניקוי בסיסי: לא להתרסק על שורות בעייתיות
       DATA = Array.isArray(data) ? data : [];
 
-      // בנה רשימת מערכות
+      // systems
       const set = new Set();
       for(const x of DATA){
         const s = safe(x.system).trim();
         if(s) set.add(s);
       }
       SYSTEMS = Array.from(set).sort((a,b)=>a.localeCompare(b, 'he'));
-
       buildSystemOptions();
 
       statusEl.textContent = `נטענו ${DATA.length} רשומות ✅`;
-      render();
+      updateCartUI();
+      renderResults();
 
       searchEl.addEventListener('input', scheduleRender);
-      systemEl.addEventListener('change', render);
+      systemEl.addEventListener('change', renderResults);
     })
     .catch(err => {
       statusEl.textContent = "שגיאה: " + err.message;
-      resultsEl.innerHTML = `<div style="opacity:0.7">ודאי שהקובץ disability_table.json נמצא באותו מקום כמו index.html.</div>`;
+      resultsEl.innerHTML = `<div style="opacity:0.7">בדקי שהקובץ disability_table.json נמצא באותו מקום כמו index.html.</div>`;
       console.error(err);
     });
 </script>
