@@ -1,66 +1,122 @@
-async function loadData(){
-  try {
-    const res = await fetch("disability_table.json");
-    window.disabilityData = await res.json();
-  } catch {
-    window.disabilityData = [];
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>חיפוש + שקלול אחוזי נכות</title>
+</head>
+<body>
+  <h2>חיפוש + שקלול אחוזי נכות</h2>
+
+  <div>
+    <input id="searchInput" placeholder="הקלידי מחלה / ממצא..." />
+    <button id="searchBtn">חפש</button>
+  </div>
+
+  <p id="status">טוען נתונים…</p>
+
+  <hr />
+
+  <h3>מחשבון שקלול</h3>
+  <div>
+    <input id="calcInput" placeholder="לדוגמה: 30 10 20 או 0.3 0.1" />
+    <button id="calcBtn">חשב</button>
+    <div><b>סה״כ משוקלל: <span id="totalBox">—</span></b></div>
+  </div>
+
+  <hr />
+
+  <div id="results"></div>
+
+  <p style="margin-top:20px;opacity:.6;text-align:center">
+    נוצר ע״י גיל גלית יצקן
+  </p>
+
+<script>
+  let DATA = [];
+
+  function toPercentNumber(v){
+    const n = Number(v);
+    if(!Number.isFinite(n)) return null;
+    // אם זה שבר (0.3) נהפוך לאחוז (30)
+    if(n > 0 && n < 1) return n * 100;
+    return n;
   }
-}
 
-function toPercentNumber(v){
-  const n = Number(v);
-  if(!Number.isFinite(n)) return 0;
-  if(n > 0 && n < 1) return n * 100;
-  return n;
-}
-
-function searchDisease(term){
-  if(!window.disabilityData) return [];
-  const t = term.toLowerCase().trim();
-  return window.disabilityData.filter(x =>
-    x.disease.toLowerCase().includes(t) ||
-    (x.subtitle && x.subtitle.toLowerCase().includes(t))
-  );
-}
-
-function calculateCombined(ps){
-  const nums = ps.map(toPercentNumber).filter(x => x > 0);
-  if(!nums.length) return 0;
-  nums.sort((a,b)=>b-a);
-  let comb = nums[0];
-  for(let i=1;i<nums.length;i++){
-    comb = comb + (100 - comb) * (nums[i] / 100);
+  async function loadData(){
+    try{
+      const res = await fetch("./disability_table.json", { cache: "no-store" });
+      if(!res.ok) throw new Error("HTTP " + res.status);
+      DATA = await res.json();
+      document.getElementById("status").textContent = "נטענו " + DATA.length + " רשומות ✅";
+    }catch(e){
+      DATA = [];
+      document.getElementById("status").textContent =
+        "שגיאה בטעינת disability_table.json ❌ (" + e.message + ")";
+    }
   }
-  return Math.min(comb, 100);
-}
 
-function renderResults(list){
-  const box = document.getElementById("results");
-  if(!box) return;
-  if(!list.length){
-    box.innerHTML = "<p>חיפוש ריק, אין ממצאים</p>";
-    return;
+  function search(term){
+    const t = (term || "").toLowerCase().trim();
+    if(!t) return [];
+    return DATA.filter(x =>
+      (x.disease && String(x.disease).toLowerCase().includes(t)) ||
+      (x.subtitle && String(x.subtitle).toLowerCase().includes(t))
+    );
   }
-  box.innerHTML = list.map(x=>{
-    const percent = Math.round(toPercentNumber(x.percent));
-    return `<div class="card">
-      <h3>${x.disease}</h3>
-      ${x.subtitle ? `<p>${x.subtitle}</p>` : ""}
-      <strong>${percent}% נכות</strong>
-    </div>`;
-  }).join("");
-}
 
-document.getElementById("searchBtn").onclick = async ()=>{
-  const term = document.getElementById("searchInput").value;
-  const found = searchDisease(term);
-  renderResults(found);
-};
+  function render(list){
+    const box = document.getElementById("results");
+    if(!list.length){
+      box.innerHTML = "<p>לא נמצאו תוצאות</p>";
+      return;
+    }
+    box.innerHTML = list.map(x => {
+      const pct = Math.round(toPercentNumber(x.percent) ?? 0);
+      const disease = x.disease ?? "";
+      const subtitle = x.subtitle ?? "";
+      return `
+        <div style="border:1px solid #ddd;border-radius:12px;padding:12px;margin:10px 0;background:#fff">
+          <div style="font-weight:700">${disease}</div>
+          <div style="margin-top:6px">${subtitle}</div>
+          <div style="margin-top:8px;font-weight:700">${pct}% נכות</div>
+        </div>
+      `;
+    }).join("");
+  }
 
-document.getElementById("calcBtn").onclick = ()=>{
-  const vals = document.getElementById("calcInput").value.split(/[, ]+/);
-  const total = calculateCombined(vals);
-  document.getElementById("totalBox").textContent = total.toFixed(1) + "%";
-};
+  function calcCombined(percs){
+    const nums = percs
+      .map(toPercentNumber)
+      .filter(x => x !== null && x > 0)
+      .map(x => Math.min(x, 100));
 
-loadData();
+    if(!nums.length) return 0;
+
+    nums.sort((a,b)=>b-a);
+
+    let total = 0;
+    for(const p of nums){
+      total = total + (p * (100 - total) / 100);
+    }
+    return Math.min(total, 100);
+  }
+
+  document.getElementById("searchBtn").onclick = () => {
+    const term = document.getElementById("searchInput").value;
+    const found = search(term);
+    render(found);
+  };
+
+  document.getElementById("calcBtn").onclick = () => {
+    const raw = document.getElementById("calcInput").value;
+    const parts = raw.split(/[, ]+/).filter(Boolean);
+    const total = calcCombined(parts);
+    document.getElementById("totalBox").textContent = total.toFixed(1) + "%";
+  };
+
+  loadData();
+</script>
+
+</body>
+</html>
