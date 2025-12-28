@@ -4,6 +4,9 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>חיפוש + שקלול אחוזי נכות</title>
+
+  <link rel="manifest" href="manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
 </head>
 <body style="font-family: Arial; padding: 16px; max-width: 1000px; margin: 0 auto; background:#fafafa;">
   <h2 style="margin:0 0 10px 0;">חיפוש + שקלול אחוזי נכות</h2>
@@ -33,40 +36,26 @@
 
     <!-- מחשבון -->
     <div style="flex: 0 0 360px; background:#fff; border:1px solid #e6e6e6; border-radius:16px; padding:14px;">
-      <h3 style="margin:0 0 10px 0;">🧮 מחשבון שקלול</h3>
-
-      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-        <div style="opacity:0.8;">נוסחה:</div>
-        <code style="background:#f3f3f3; padding:6px 8px; border-radius:10px;">
-          total = total + p*(100-total)/100
-        </code>
-      </div>
-
-      <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
-        <button id="clearCart"
-                style="flex:1; padding:12px; border:1px solid #ccc; border-radius:12px; background:#fff; cursor:pointer;">
-          🧹 איפוס רשימה
-        </button>
-        <button id="copySummary"
-                style="flex:1; padding:12px; border:1px solid #ccc; border-radius:12px; background:#fff; cursor:pointer;">
-          📋 העתק סיכום
-        </button>
-      </div>
+      <h3 style="margin:0 0 10px 0;">מחשבון שקלול</h3>
 
       <div id="cartMeta" style="margin-top:12px; font-weight:700;"></div>
       <div id="cartList" style="margin-top:10px;"></div>
 
       <div style="margin-top:12px; padding:12px; border:1px dashed #ddd; border-radius:14px;">
         <div style="font-size:14px; opacity:0.85;">תוצאה משוקללת</div>
-        <div style="display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin-top:6px;">
-          <div style="font-size:18px; font-weight:900;" id="totalPct">—</div>
-          <div style="font-size:14px; opacity:0.85;" id="totalPctRounded"></div>
-        </div>
+        <div style="font-size:22px; font-weight:900;" id="totalPct">—</div>
+        <div style="font-size:14px; opacity:0.85;" id="totalPctRounded"></div>
       </div>
 
-      <div style="margin-top:10px; font-size:13px; opacity:0.8;">
-        טיפ: השקלול עובד הכי נכון כשמוסיפים כמה סעיפים, והוא תמיד יוצא ≤ 100%.
-      </div>
+      <button id="clearCart"
+              style="width:100%; margin-top:12px; padding:12px; border:1px solid #ccc; border-radius:12px; background:#fff; cursor:pointer;">
+        איפוס רשימה
+      </button>
+
+      <button id="copySummary"
+              style="width:100%; margin-top:8px; padding:12px; border:1px solid #ccc; border-radius:12px; background:#fff; cursor:pointer;">
+        העתק תוצאה
+      </button>
     </div>
   </div>
 
@@ -75,7 +64,6 @@
   const resultsEl = document.getElementById('results');
   const searchEl  = document.getElementById('search');
   const systemEl  = document.getElementById('systemFilter');
-  const clearBtn  = document.getElementById('clearBtn');
 
   const cartMetaEl = document.getElementById('cartMeta');
   const cartListEl = document.getElementById('cartList');
@@ -87,276 +75,139 @@
   const safe = v => (v === null || v === undefined) ? "" : String(v);
   const norm = s => safe(s).trim().toLowerCase();
 
-  function escapeHtml(str){
-    return safe(str)
-      .replaceAll("&","&amp;")
-      .replaceAll("<","&lt;")
-      .replaceAll(">","&gt;")
-      .replaceAll('"',"&quot;")
-      .replaceAll("'","&#039;");
+  function toPercentNumber(v){
+    const n = Number(v);
+    if(!Number.isFinite(n)) return null;
+    if(n > 0 && n < 1) return n * 100; // שבר → אחוז
+    return n;
   }
 
-  // --- DATA ---
   let DATA = [];
-  let SYSTEMS = [];
-
-  // --- CART ---
-  // item = { id, title, system, condition, percent }
   let CART = [];
   let nextId = 1;
 
-  function buildSystemOptions(){
-    const current = systemEl.value;
-    systemEl.innerHTML = `<option value="">כל המערכות</option>` + SYSTEMS
-      .map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`)
-      .join("");
-    if(SYSTEMS.includes(current)) systemEl.value = current;
-  }
-
-  function calcCombinedPercent(percentList){
-    // percentList: array of numbers [p1, p2...]
-    const ps = percentList
-      .map(p => Number(p))
-      .filter(p => Number.isFinite(p) && p > 0)
-      .sort((a,b) => b-a); // מהגבוה לנמוך
-
-    let total = 0;
-    for(const p of ps){
-      total = total + (p * (100 - total) / 100);
-    }
-    return total; // יכול להיות עם שברים
-  }
-
-  function updateCartUI(){
-    cartMetaEl.textContent = CART.length ? `נבחרו ${CART.length} סעיפים` : "עוד לא נבחרו סעיפים.";
-    const percents = CART.map(x => x.percent);
-    const total = calcCombinedPercent(percents);
-
-    if(!CART.length){
-      totalPctEl.textContent = "—";
-      totalPctRoundedEl.textContent = "";
-      cartListEl.innerHTML = `<div style="opacity:0.7">הוסיפי סעיפים מתוך התוצאות (כפתור ➕).</div>`;
-      return;
-    }
-
-    totalPctEl.textContent = `${total.toFixed(1)}%`;
-    totalPctRoundedEl.textContent = `מעוגל: ${Math.round(total)}%`;
-
-    cartListEl.innerHTML = CART.map(item => `
-      <div style="border:1px solid #eee; border-radius:14px; padding:10px; margin:8px 0; background:#fff;">
-        <div style="display:flex; justify-content:space-between; gap:10px; align-items:flex-start;">
-          <div style="font-weight:800; font-size:14px; line-height:1.25;">
-            ${escapeHtml(item.title || "—")}
-            <div style="font-weight:400; opacity:0.8; margin-top:4px;">
-              ${escapeHtml(item.system || "—")}
-            </div>
-          </div>
-          <div style="text-align:left; white-space:nowrap;">
-            <div style="font-weight:900; font-size:16px;">${escapeHtml(item.percent)}%</div>
-            <button data-remove="${item.id}"
-                    style="margin-top:6px; padding:8px 10px; border:1px solid #ccc; border-radius:12px; background:#fff; cursor:pointer;">
-              ✖ הסר
-            </button>
-          </div>
-        </div>
-        <div style="opacity:0.85; font-size:13px; margin-top:8px;">
-          ${escapeHtml(item.condition || "")}
-        </div>
-      </div>
-    `).join("");
-
-    // remove handlers
-    document.querySelectorAll('[data-remove]').forEach(btn => {
-      btn.onclick = () => {
-        const id = Number(btn.getAttribute('data-remove'));
-        CART = CART.filter(x => x.id !== id);
-        updateCartUI();
-      };
-    });
-  }
-
-  async function copyText(text){
-    try{
-      await navigator.clipboard.writeText(text);
-      return true;
-    } catch(e){
-      // fallback
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
-      return true;
-    }
-  }
-
-  function addToCart(x){
-    const disease = safe(x.disease);
-    const sub     = safe(x.sub_disease);
-    const title = [disease, (sub && sub !== "—") ? sub : ""].filter(Boolean).join(" • ");
-
-    // percent: אצלך כבר 0-100 (בניתי כך את הקובץ)
-    const pct = Number(x.percent);
-    if(!Number.isFinite(pct) || pct <= 0){
-      alert("אין אחוז תקין לשורה הזו.");
-      return;
-    }
-
-    CART.push({
-      id: nextId++,
-      title,
-      system: safe(x.system),
-      condition: safe(x.condition),
-      percent: Math.round(pct) // אפשר לשנות ל-pct אם תרצי לא לעגל סעיפים
-    });
-
-    updateCartUI();
-  }
-
-  // --- SEARCH RENDER ---
-  function renderResults(){
-    const q = norm(searchEl.value);
-    const sysFilter = norm(systemEl.value);
-
-    if(!q && !sysFilter){
-      statusEl.textContent = `נטענו ${DATA.length} רשומות ✅ · הקלידי כדי לחפש או בחרי מערכת.`;
-      resultsEl.innerHTML = `<div style="opacity:0.7; margin-top:10px;">טיפ: כתבי "ברך" / "טרשת" / "סרטן"…</div>`;
-      return;
-    }
-
-    let out = DATA.filter(x => {
-      const sys = norm(x.system);
-      if(sysFilter && sys !== sysFilter) return false;
-      if(!q) return true;
-
-      const blob = (
-        safe(x.disease) + " " +
-        safe(x.sub_disease) + " " +
-        safe(x.condition) + " " +
-        safe(x.system)
-      ).toLowerCase();
-
-      return blob.includes(q);
-    });
-
-    const total = out.length;
-    out = out.slice(0, 200);
-
-    statusEl.textContent = `נמצאו ${total} תוצאות · מציג עד 200`;
-
-    resultsEl.innerHTML = out.length ? out.map((x, idx) => {
-      const title = [safe(x.disease), safe(x.sub_disease)].filter(Boolean).join(" • ");
-      const pct = safe(x.percent) ? (safe(x.percent) + "%") : "—";
-      const sys = safe(x.system);
-      const cond = safe(x.condition);
-
-      // שומרים אינדקס כדי להוסיף לסל
-      return `
-        <div style="border:1px solid #e6e6e6; border-radius:14px; padding:12px; margin:10px 0; background:#fff;">
-          <div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start;">
-            <div style="font-weight:800; font-size:15px;">${escapeHtml(title || "—")}</div>
-            <div style="display:flex; gap:8px; align-items:center;">
-              <div style="font-weight:900; font-size:18px; white-space:nowrap;">${escapeHtml(pct)}</div>
-              <button data-add="${idx}"
-                      style="padding:10px 12px; border:1px solid #ccc; border-radius:12px; background:#fff; cursor:pointer;">
-                ➕
-              </button>
-            </div>
-          </div>
-          <div style="margin-top:6px; opacity:0.85; font-size:13px;"><b>מערכת:</b> ${escapeHtml(sys || "—")}</div>
-          <div style="margin-top:6px; opacity:0.85; font-size:13px;"><b>תנאי:</b> ${escapeHtml(cond || "—")}</div>
-        </div>
-      `;
-    }).join("") : `<div style="opacity:0.7; margin-top:10px;">לא נמצאו תוצאות.</div>`;
-
-    // add handlers (לפי אינדקס בתוך out.slice)
-    // כדי לפשט: נבנה מחדש מערך התוצאות שאנחנו מציגים כרגע
-    const displayed = DATA.filter(x => {
-      const sys = norm(x.system);
-      if(sysFilter && sys !== sysFilter) return false;
-      if(!q) return true;
-      const blob = (safe(x.disease)+" "+safe(x.sub_disease)+" "+safe(x.condition)+" "+safe(x.system)).toLowerCase();
-      return blob.includes(q);
-    }).slice(0, 200);
-
-    document.querySelectorAll('[data-add]').forEach(btn => {
-      btn.onclick = () => {
-        const i = Number(btn.getAttribute('data-add'));
-        const row = displayed[i];
-        if(row) addToCart(row);
-      };
-    });
-  }
-
-  // debounce
-  let t = null;
-  function scheduleRender(){
-    clearTimeout(t);
-    t = setTimeout(renderResults, 80);
-  }
-
-  clearBtn.onclick = () => {
-    searchEl.value = "";
-    systemEl.value = "";
-    renderResults();
-    searchEl.focus();
-  };
-
-  clearCartBtn.onclick = () => {
-    CART = [];
-    updateCartUI();
-  };
-
-  copySummaryBtn.onclick = async () => {
-    if(!CART.length){
-      alert("אין סעיפים ברשימה.");
-      return;
-    }
-    const total = calcCombinedPercent(CART.map(x => x.percent));
-    const lines = CART
-      .slice()
-      .sort((a,b)=>b.percent-a.percent)
-      .map(x => `${x.percent}% — ${x.title}`);
-    const summary =
-      `שקלול אחוזי נכות (מצטבר):\n` +
-      lines.join("\n") +
-      `\n\nסה״כ משוקלל: ${total.toFixed(1)}% (מעוגל: ${Math.round(total)}%)`;
-
-    const ok = await copyText(summary);
-    if(ok) alert("הסיכום הועתק ✅");
-  };
-
-  // --- LOAD ---
-  statusEl.textContent = "טוען נתונים…";
   fetch('./disability_table.json', { cache: "no-store" })
     .then(r => {
-      if(!r.ok) throw new Error("לא נטען disability_table.json (סטטוס " + r.status + ")");
+      if(!r.ok) throw new Error("לא נטען JSON (סטטוס " + r.status + ")");
       return r.json();
     })
     .then(data => {
-      DATA = Array.isArray(data) ? data : [];
+      DATA = data;
+      statusEl.textContent = `נטענו ${DATA.length} רשומות`;
 
-      // systems
+      // בניית פילטר מערכות
       const set = new Set();
-      for(const x of DATA){
-        const s = safe(x.system).trim();
-        if(s) set.add(s);
+      DATA.forEach(x => { if(x.system) set.add(x.system.trim()); });
+      const systems = Array.from(set).sort((a,b)=>a.localeCompare(b,'he'));
+
+      systemEl.innerHTML = `<option value="">כל המערכות</option>` +
+        systems.map(s => `<option value="${s}">${s}</option>`).join("");
+
+      function render(){
+        const q = norm(searchEl.value);
+        const sysFilter = norm(systemEl.value);
+
+        if(!q && !sysFilter){
+          resultsEl.innerHTML = `<div style="opacity:0.7;margin-top:10px;">הקלידי כדי לחפש</div>`;
+          return;
+        }
+
+        let out = DATA.filter(x => {
+          const sys = norm(x.system);
+          if(sysFilter && sys !== sysFilter) return false;
+          if(!q) return true;
+          const blob = (safe(x.disease)+" "+safe(x.sub_disease)+" "+safe(x.condition)+" "+safe(x.system)).toLowerCase();
+          return blob.includes(q);
+        }).slice(0, 200);
+
+        resultsEl.innerHTML = out.length
+          ? out.map((x,idx)=>{
+              const p = toPercentNumber(x.percent);
+              const pct = p ? Math.round(p) + "%" : "—";
+              const title = [safe(x.disease), safe(x.sub_disease)].filter(Boolean).join(" • ");
+              return `
+                <div style="border:1px solid #ddd;border-radius:12px;padding:12px;margin:10px 0;">
+                  <div style="display:flex;justify-content:space-between;gap:12px;">
+                    <div style="font-weight:800;">${title || "—"}</div>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                      <div style="font-weight:900;font-size:18px;">${pct}</div>
+                      <button data-add="${idx}" style="padding:6px 10px;border:1px solid #ccc;border-radius:8px;background:#fff;cursor:pointer;">➕</button>
+                    </div>
+                  </div>
+                  <div style="opacity:0.8;margin-top:6px;"><b>מערכת:</b> ${safe(x.system)}</div>
+                  <div style="opacity:0.8;margin-top:4px;"><b>תנאי:</b> ${safe(x.condition)}</div>
+                </div>
+              `;
+            }).join("")
+          : "<div style='opacity:0.7;margin-top:10px;'>לא נמצאו תוצאות</div>";
+
+        const displayed = DATA.filter(x=>{
+          const sys = norm(x.system);
+          if(sysFilter && sys !== sysFilter) return false;
+          if(!q) return true;
+          const blob = (safe(x.disease)+" "+safe(x.sub_disease)+" "+safe(x.condition)+" "+safe(x.system)).toLowerCase();
+          return blob.includes(q);
+        }).slice(0, 200);
+
+        document.querySelectorAll('[data-add]').forEach(btn=>{
+          btn.onclick = ()=>{
+            const i = Number(btn.getAttribute('data-add'));
+            const row = displayed[i];
+            if(row){
+              const pct = toPercentNumber(row.percent);
+              if(!pct){ alert("אין אחוז תקין לשורה"); return; }
+              CART.push({ id: nextId++, title: (row.disease+" "+row.sub_disease).trim(), system: row.system, condition: row.condition, percent: Math.round(pct) });
+              updateCartUI();
+            }
+          };
+        });
       }
-      SYSTEMS = Array.from(set).sort((a,b)=>a.localeCompare(b, 'he'));
-      buildSystemOptions();
 
-      statusEl.textContent = `נטענו ${DATA.length} רשומות ✅`;
-      updateCartUI();
-      renderResults();
+      function calcCombined(list){
+        let t = 0;
+        list.forEach(p=>{ t = t + (p*(100-t)/100); });
+        return t;
+      }
 
-      searchEl.addEventListener('input', scheduleRender);
-      systemEl.addEventListener('change', renderResults);
-    })
-    .catch(err => {
-      statusEl.textContent = "שגיאה: " + err.message;
-      resultsEl.innerHTML = `<div style="opacity:0.7">בדקי שהקובץ disability_table.json נמצא באותו מקום כמו index.html.</div>`;
-      console.error(err);
+      function updateCartUI(){
+        cartMetaEl.textContent = `נבחרו ${CART.length} סעיפים`;
+        const ps = CART.map(x=>x.percent).sort((a,b)=>b-a);
+        const total = calcCombined(ps);
+        totalPctEl.textContent = total.toFixed(1) + "%";
+        totalPctRoundedEl.textContent = "מעוגל: " + Math.round(total) + "%";
+
+        cartListEl.innerHTML = CART.map(x=>`
+          <div style="border:1px solid #eee;border-radius:12px;padding:10px;margin:6px 0;">
+            <div style="display:flex;justify-content:space-between;gap:10px;">
+              <div>${x.title}</div>
+              <div style="font-weight:900;font-size:16px;">${x.percent}%</div>
+            </div>
+            <button data-remove="${x.id}" style="width:100%;margin-top:6px;padding:6px;border:1px solid #ccc;border-radius:8px;background:#fff;cursor:pointer;">הסר</button>
+          </div>
+        `).join("");
+
+        document.querySelectorAll('[data-remove]').forEach(btn=>{
+          btn.onclick = ()=>{
+            const id = Number(btn.getAttribute('data-remove'));
+            CART = CART.filter(x=>x.id !== id);
+            updateCartUI();
+          };
+        });
+
+        const totalAll = calcCombined(ps);
+        totalPctEl.textContent = totalAll.toFixed(1) + "%";
+        totalPctRoundedEl.textContent = "מעוגל: " + Math.round(totalAll) + "%";
+      }
+
+      copySummaryBtn.onclick = async ()=>{
+        const total = calcCombined(CART.map(x=>x.percent).sort((a,b)=>b-a));
+        await navigator.clipboard.writeText("סה״כ נכות משוקלל: " + Math.round(total) + "%");
+        alert("התוצאה הועתקה");
+      };
+
+      clearCartBtn.onclick = ()=>{ CART=[]; updateCartUI(); };
+      searchEl.addEventListener('input', render);
+      systemEl.addEventListener('change', render);
     });
 </script>
 </body>
