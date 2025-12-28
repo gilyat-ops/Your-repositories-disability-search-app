@@ -1,63 +1,67 @@
-<script>
-const disabilityData = [
-  {"disease":"Autism Spectrum Disorder","subtitle":"קל, תפקוד עצמאי","percent":0.3},
-  {"disease":"Autism Spectrum Disorder","subtitle":"קל, קושי חברתי","percent":0.5},
-  {"disease":"Autism Spectrum Disorder","subtitle":"קל, קושי ראייתי","percent":0.7}
-];
+async function loadData() {
+  try {
+    const res = await fetch("disability_table.json");
+    window.disabilityData = await res.json();
+  } catch {
+    window.disabilityData = [];
+  }
+}
+
+function searchDisease(term) {
+  if (!window.disabilityData) return [];
+  const t = term.trim().toLowerCase();
+  return window.disabilityData.filter(x =>
+    x.disease.toLowerCase().includes(t) ||
+    (x.subtitle && x.subtitle.toLowerCase().includes(t))
+  );
+}
 
 function toPercentNumber(v) {
   const n = Number(v);
-  if (!Number.isFinite(n)) return 0;
+  if (!Number.isFinite(n)) return null;
   if (n > 0 && n < 1) return n * 100;
   return n;
 }
 
-function calcCombined(percentList) {
-  if (!percentList.length) return 0;
-  let combined = percentList[0];
-  for (let i = 1; i < percentList.length; i++) {
-    combined = combined + (100 - combined) * (percentList[i] / 100);
+function calculateCombined(ps) {
+  if (!Array.isArray(ps)) return 0;
+  const nums = ps.map(toPercentNumber).filter(x => x !== null && x >= 0);
+  if (!nums.length) return 0;
+  nums.sort((a, b) => b - a);
+  let comb = nums[0];
+  for (let i = 1; i < nums.length; i++) {
+    comb = comb + (100 - comb) * (nums[i] / 100);
   }
-  return combined;
+  return comb;
 }
 
-document.getElementById("searchBtn").onclick = () => {
-  const term = document.getElementById("searchInput").value.toLowerCase().trim();
-  const results = disabilityData.filter(x => 
-    x.disease.toLowerCase().includes(term) || 
-    x.subtitle.toLowerCase().includes(term)
-  );
-
-  const container = document.getElementById("results");
-  container.innerHTML = "";
-
-  if (!results.length) {
-    container.innerHTML = "<p>אין תוצאות</p>";
+function renderResults(list) {
+  const box = document.getElementById("results");
+  if (!box) return;
+  if (!list.length) {
+    box.innerHTML = "<p>לא נמצאו תוצאות</p>";
     return;
   }
+  box.innerHTML = list.map(x => {
+    const percent = toPercentNumber(x.percent);
+    return `<div class="card">
+      <h3>${x.disease}</h3>
+      ${x.subtitle ? `<p>${x.subtitle}</p>` : ""}
+      ${percent !== null ? `<strong>${percent}% נכות</strong>` : ""}
+    </div>`;
+  }).join("");
+}
 
-  results.forEach(x => {
-    const p = Math.round(toPercentNumber(x.percent));
-    container.innerHTML += `
-      <div class="card">
-        <h3>${x.disease}</h3>
-        <p>${x.subtitle}</p>
-        <strong>${p}% נכות</strong>
-      </div>`;
-  });
+document.getElementById("searchBtn").onclick = async () => {
+  const term = document.getElementById("searchInput").value;
+  const found = searchDisease(term);
+  renderResults(found);
 };
 
 document.getElementById("calcBtn").onclick = () => {
-  const input = document.getElementById("calcInput").value;
-  const nums = input.split(/[, ]+/).map(v => {
-    const p = toPercentNumber(v);
-    return p > 100 ? 100 : p;
-  }).filter(x => x >= 0);
-
-  nums.sort((a, b) => b - a);
-  const total = calcCombined(nums);
-  const combinedTotal = Math.min(total, 100);
-
-  document.getElementById("totalBox").textContent = combinedTotal.toFixed(1) + "%";
+  const vals = document.getElementById("calcInput").value.split(/[, ]+/);
+  const total = calculateCombined(vals.map(Number));
+  document.getElementById("totalBox").textContent = total.toFixed(1) + "%";
 };
-</script>
+
+loadData();
