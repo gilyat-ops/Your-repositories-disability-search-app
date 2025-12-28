@@ -1,3 +1,9 @@
+function toPercentNumber(v){
+  const n = Number(v);
+  if(!Number.isFinite(n)) return null;
+  if(n > 0 && n < 1) return n * 100; // ממיר שבר לאחוז
+  return n;
+}
 <!DOCTYPE html>
 <html dir="rtl" lang="he">
 <head>
@@ -194,13 +200,16 @@
           };
         });
 
-        const totalAll = calcCombined(ps);
-        totalPctEl.textContent = totalAll.toFixed(1) + "%";
-        totalPctRoundedEl.textContent = "מעוגל: " + Math.round(totalAll) + "%";
+const totalAll = calcCombined(ps);
+const totalPercent = totalAll < 1 ? totalAll * 100 : totalAll;
+totalpct1.textContent = totalPercent.toFixed(1) + "%";
       }
 
       copySummaryBtn.onclick = async ()=>{
-        const total = calcCombined(CART.map(x=>x.percent).sort((a,b)=>b-a));
+       ;
+const rawTotal = calcCombined(CART.map(x=>x.percent).sort((a,b)=>b-a));
+const total = rawTotal < 1 ? rawTotal * 100 : rawTotal;
+
         await navigator.clipboard.writeText("סה״כ נכות משוקלל: " + Math.round(total) + "%");
         alert("התוצאה הועתקה");
       };
