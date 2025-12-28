@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>חיפוש אחוזי נכות</title>
+</head>
+<body>
+<input id="search" placeholder="הקלד מחלה..." style="width:90%;padding:10px;font-size:18px"/>
+<div id="results"></div>
+
+<script>
+fetch('disability_table.json')
+  .then(r=>r.json())
+  .then(data=>{
+    document.getElementById('search').oninput = e=>{
+      let q = e.target.value.toLowerCase();
+      let f = data.filter(x=>x.disease.toLowerCase().includes(q));
+      document.getElementById('results').innerHTML = f.map(x=>
+        `<p><b>${x.disease}</b> — ${x.percent ?? '—'}%</p>`
+      ).join('');
+    }
+  });
+</script>
+</body>
+</html>
