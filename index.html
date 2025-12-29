@@ -5,561 +5,555 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>חיפוש + שקלול אחוזי נכות</title>
 
-  <!-- PWA (לא חובה אבל נחמד) -->
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#ffffff" />
+  <!-- PWA manifest -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#8b5cf6" />
 
   <style>
     :root{
-      --border:#e6e6e6;
-      --muted:#6b7280;
       --bg:#ffffff;
       --card:#ffffff;
-      --accent:#7c3aed;
-      --shadow: 0 10px 30px rgba(0,0,0,.05);
-      --radius:22px;
-      --radius2:18px;
-      --font: system-ui,-apple-system,"Segoe UI",Arial;
+      --muted:#6b7280;
+      --text:#111827;
+      --line:#e5e7eb;
+      --accent:#8b5cf6;
+      --accent2:#a78bfa;
+      --shadow: 0 8px 20px rgba(0,0,0,.06);
+      --radius:16px;
     }
     *{box-sizing:border-box}
     body{
       margin:0;
-      font-family:var(--font);
-      background:var(--bg);
-      color:#111;
-    }
-    .wrap{
-      max-width:1200px;
-      margin:0 auto;
-      padding:20px 18px 32px;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,"Noto Sans Hebrew",sans-serif;
+      color:var(--text);
+      background:linear-gradient(180deg,#fff,#faf7ff 55%, #fff);
     }
     header{
-      display:flex;
-      align-items:flex-end;
-      justify-content:space-between;
-      gap:14px;
-      margin-bottom:14px;
+      padding:22px 18px 10px;
+      text-align:center;
     }
-    h1{
+    header h1{
       margin:0;
-      font-size:38px;
-      font-weight:900;
+      font-size:34px;
       letter-spacing:.2px;
-    }
-    #ver{
-      margin-top:8px;
-      color:var(--muted);
-      font-size:16px;
-      font-weight:600;
-    }
-
-    .grid{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:18px;
-      align-items:start;
-      margin-top:16px;
-    }
-    @media (max-width: 980px){
-      header{flex-direction:column; align-items:flex-start}
-      .grid{grid-template-columns:1fr}
-      h1{font-size:30px}
-    }
-
-    .card{
-      background:var(--card);
-      border:1px solid var(--border);
-      border-radius:var(--radius);
-      padding:18px;
-      box-shadow:none;
-    }
-    .cardTitle{
-      font-size:22px;
       font-weight:900;
-      margin:0 0 12px 0;
     }
-
-    .row{
-      display:flex;
-      gap:12px;
-      align-items:center;
-      flex-wrap:wrap;
-    }
-    input, select{
-      border:1px solid var(--border);
-      border-radius:16px;
-      padding:12px 14px;
-      font-size:18px;
-      outline:none;
-      min-height:46px;
-      background:#fff;
-    }
-    input:focus, select:focus{
-      border-color:#111;
-      box-shadow:0 0 0 3px rgba(0,0,0,.08);
-    }
-    .btn{
-      border:1px solid var(--border);
-      background:#fff;
-      border-radius:16px;
-      padding:10px 16px;
-      font-size:18px;
-      cursor:pointer;
-      min-height:46px;
-      font-weight:700;
-    }
-    .btn:hover{background:#fafafa}
-    .btnPrimary{
-      border-color:#111;
-    }
-
-    .small{
-      color:var(--muted);
-      font-size:16px;
-      font-weight:600;
-    }
-
-    .list{
-      margin-top:14px;
-      display:flex;
-      flex-direction:column;
-      gap:14px;
-    }
-    .item{
-      border:1px solid #ededed;
-      border-radius:var(--radius);
-      padding:16px;
-      display:grid;
-      grid-template-columns: 86px 1fr;
-      gap:14px;
-      background:#fff;
-    }
-    .pctBox{
-      display:flex;
-      align-items:flex-start;
-      justify-content:flex-start;
-      gap:10px;
-      font-weight:900;
-      font-size:22px;
-      line-height:1;
-    }
-    .plusBtn{
-      width:44px;height:44px;
-      border:1px solid var(--border);
-      border-radius:14px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-size:26px;
-      color:var(--accent);
-      cursor:pointer;
-      user-select:none;
-      background:#fff;
-    }
-    .plusBtn:hover{background:#faf7ff}
-    .minusBtn{
-      width:44px;height:44px;
-      border:1px solid var(--border);
-      border-radius:14px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-size:26px;
-      color:#111;
-      cursor:pointer;
-      user-select:none;
-      background:#fff;
-    }
-    .minusBtn:hover{background:#fafafa}
-    .titleLine{
-      font-size:26px;
-      font-weight:900;
-      margin:0;
-      line-height:1.1;
-    }
-    .subLine{
-      margin-top:8px;
-      font-size:18px;
-      font-weight:700;
-    }
-    .meta{
-      margin-top:10px;
-      font-size:18px;
-    }
-    .meta b{font-weight:900}
-    .mutedLine{
+    header .sub{
       margin-top:6px;
       color:var(--muted);
-      font-weight:600;
+      font-size:14px;
     }
-
+    .wrap{
+      max-width:1100px;
+      margin:0 auto;
+      padding:0 14px 30px;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns: 1.35fr .9fr;
+      gap:16px;
+      align-items:start;
+    }
+    @media (max-width: 980px){
+      .grid{grid-template-columns:1fr; }
+    }
+    .panel{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:16px;
+    }
+    .panel h2{
+      margin:0 0 10px;
+      font-size:18px;
+      font-weight:800;
+    }
+    .row{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+      margin-bottom:10px;
+    }
+    .row .grow{flex:1}
+    input[type="text"], select{
+      width:100%;
+      padding:11px 12px;
+      border-radius:12px;
+      border:1px solid var(--line);
+      outline:none;
+      font-size:14px;
+      background:#fff;
+    }
+    input[type="text"]:focus, select:focus{
+      border-color: var(--accent2);
+      box-shadow: 0 0 0 3px rgba(139,92,246,.15);
+    }
+    .btn{
+      border:1px solid var(--line);
+      background:#fff;
+      border-radius:12px;
+      padding:10px 14px;
+      cursor:pointer;
+      font-weight:700;
+      transition:.15s ease;
+    }
+    .btn:hover{transform:translateY(-1px)}
+    .btn.primary{
+      border-color: transparent;
+      background:var(--accent);
+      color:white;
+    }
+    .btn.primary:hover{background:#7c3aed}
     .pill{
       display:inline-flex;
       align-items:center;
-      gap:10px;
-      padding:8px 12px;
-      border:1px solid var(--border);
+      gap:8px;
+      border:1px solid var(--line);
       border-radius:999px;
-      font-weight:800;
+      padding:8px 12px;
       background:#fff;
+      font-size:13px;
+      color:var(--muted);
+      user-select:none;
     }
-
-    .cartList{
+    .pill strong{color:var(--text)}
+    .list{
       display:flex;
       flex-direction:column;
-      gap:10px;
+      gap:12px;
       margin-top:10px;
+      max-height: 560px;
+      overflow:auto;
+      padding-right:4px;
     }
-    .cartRow{
+    .item{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:14px;
+      display:grid;
+      grid-template-columns: 1fr auto;
+      gap:14px;
+      align-items:center;
+      box-shadow: 0 2px 8px rgba(0,0,0,.04);
+    }
+    .title{
+      font-size:22px;
+      font-weight:900;
+      line-height:1.1;
+      margin:0;
+    }
+    .en{
+      margin-top:4px;
+      color:#111827;
+      opacity:.9;
+      font-size:18px;
+      font-weight:800;
+    }
+    .meta{
+      margin-top:6px;
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.4;
+    }
+    .meta b{color:#374151}
+    .pctBox{
+      text-align:center;
+      min-width:120px;
+      position:relative;
       display:flex;
       align-items:center;
-      justify-content:space-between;
+      justify-content:center;
       gap:10px;
-      padding:10px 12px;
-      border:1px solid #efefef;
-      border-radius:16px;
     }
-    .cartName{font-weight:800; font-size:16px}
-    .cartPct{font-weight:900}
-    .ghost{
-      color:var(--muted);
-      font-weight:700;
+    .pct{
+      font-size:28px;
+      font-weight:1000;
+      color:#111827;
+      white-space:nowrap;
+    }
+    .plusBtn{
+      position:absolute;
+      left:6px;
+      top:50%;
+      transform:translateY(-50%);
+      width:38px;
+      height:38px;
+      border-radius:999px;
+      border:1px solid rgba(139,92,246,.35);
+      background: rgba(139,92,246,.08);
+      color: var(--accent);
+      font-weight:900;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:20px;
+      transition:.15s ease;
+    }
+    .plusBtn:hover{background: rgba(139,92,246,.16)}
+    .plusBtn.active{
+      background: var(--accent);
+      border-color: var(--accent);
+      color:#fff;
     }
 
-    .bigResult{
-      font-size:44px;
-      font-weight:1000;
-      text-align:left;
-      letter-spacing:.2px;
+    .rightPanel{
+      position:sticky;
+      top:10px;
     }
-    .resultBox{
-      border:1px dashed #d7d7d7;
+    @media (max-width:980px){
+      .rightPanel{position:static}
+    }
+    .bigResult{
+      border:1px dashed rgba(139,92,246,.45);
+      background: rgba(139,92,246,.06);
+      padding:14px;
       border-radius:18px;
-      padding:12px 14px;
+      text-align:center;
       margin-top:10px;
+    }
+    .bigResult .label{color:var(--muted); font-weight:800}
+    .bigResult .value{font-size:46px; font-weight:1000; margin-top:6px}
+    .muted{color:var(--muted)}
+    .small{font-size:13px; color:var(--muted)}
+    .divider{height:1px; background:var(--line); margin:12px 0;}
+    .chips{
+      display:flex; flex-wrap:wrap; gap:8px;
+      margin-top:10px;
+      min-height:34px;
+    }
+    .chip{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 10px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background:#fff;
+      font-size:13px;
+    }
+    .chip button{
+      border:none;
+      background:transparent;
+      cursor:pointer;
+      color:#ef4444;
+      font-weight:900;
+      font-size:14px;
+      line-height:1;
+    }
+    .hint{
+      font-size:13px;
+      color:var(--muted);
+      margin-top:8px;
+    }
+    .footerNote{
+      margin-top:8px;
+      font-size:12px;
+      color:var(--muted);
+    }
+    .badgeCount{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:999px;
+      padding:6px 10px;
+      display:inline-flex;
+      gap:8px;
+      align-items:center;
+      font-weight:800;
+      font-size:13px;
+    }
+    .dot{
+      width:10px;height:10px;border-radius:999px;background:#22c55e;
+      box-shadow: 0 0 0 3px rgba(34,197,94,.12);
+      display:inline-block;
     }
   </style>
 </head>
 
 <body>
+<header>
   <div class="wrap">
-    <header>
-      <div>
-        <h1>חיפוש + שקלול אחוזי נכות</h1>
-        <div id="ver">גרסה: טוען…</div>
+    <h1>חיפוש + שקלול אחוזי נכות</h1>
+    <div class="sub" id="stamp"></div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="grid">
+    <!-- LEFT -->
+    <section class="panel">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <div class="badgeCount"><span class="dot"></span> נבחרו <strong id="pickedCount">0</strong> רשומות</div>
+        <button class="btn" id="clearPicked">איפוס רשימה</button>
       </div>
-      <div class="pill">
-        <span>נטענו</span>
-        <span id="count">0</span>
-        <span>רשומות ✅</span>
+
+      <div class="row">
+        <div class="grow">
+          <input id="q" type="text" placeholder="הקלידי מחלה / מערכת / ממצא..." />
+        </div>
+        <button class="btn primary" id="searchBtn">ניקוי</button>
       </div>
-    </header>
 
-    <div class="grid">
-
-      <!-- צד שמאל: מחשבון / סל -->
-      <section class="card">
-        <h2 class="cardTitle">מחשבון שקלול</h2>
-
-        <div class="small">נבחרו <span id="cartCount">0</span></div>
-
-        <div class="resultBox">
-          <div class="small">תוצאה משוקללת</div>
-          <div class="bigResult" id="totalPct">—</div>
-        </div>
-
-        <div class="row" style="margin-top:12px">
-          <button class="btn" id="clearCartBtn">איפוס רשימה</button>
-          <button class="btn btnPrimary" id="copyBtn">העתק תוצאה</button>
-        </div>
-
-        <div class="small" style="margin-top:14px">או חישוב ידני (לדוגמה: <b>0.1 0.3</b> או <b>20 10 30</b>)</div>
-        <div class="row" style="margin-top:10px">
-          <input id="manualInput" type="text" placeholder="לדוגמה: 0.1 0.3 או 20 10 30" style="flex:1; min-width:260px">
-          <button class="btn" id="manualCalcBtn">חשב</button>
-        </div>
-        <div class="small" id="manualOut" style="margin-top:10px"></div>
-
-        <div class="cartList" id="cartList"></div>
-      </section>
-
-      <!-- צד ימין: חיפוש -->
-      <section class="card">
-        <div class="row">
-          <input id="searchInput" type="text" placeholder="הקלידי מחלה / ממצא…" style="flex:1; min-width:260px">
-          <button class="btn" id="searchBtn">ניקוי</button>
-        </div>
-
-        <div class="row" style="margin-top:10px">
-          <select id="systemSelect" style="flex:1; min-width:260px">
+      <div class="row">
+        <div class="grow">
+          <select id="systemSel">
             <option value="">כל המערכות</option>
           </select>
         </div>
+      </div>
 
-        <div class="small" style="margin-top:12px">תוצאות</div>
-        <div class="list" id="results"></div>
-      </section>
+      <div class="small">תוצאות</div>
+      <div class="list" id="results"></div>
+      <div class="footerNote" id="statusLine"></div>
+    </section>
 
-    </div>
+    <!-- RIGHT -->
+    <aside class="panel rightPanel">
+      <h2>מחשבון שקלול</h2>
+      <div class="muted">נבחרו <b id="pickedCount2">0</b></div>
+
+      <div class="chips" id="chips"></div>
+
+      <div class="divider"></div>
+
+      <div class="row">
+        <button class="btn" id="copyResult">העתק תוצאה</button>
+        <button class="btn" id="clearCalc">נקה</button>
+      </div>
+
+      <div class="bigResult">
+        <div class="label">תוצאה משוקללת</div>
+        <div class="value" id="weightedOut">—</div>
+      </div>
+
+      <div class="hint">או חישוב ידני (לדוגמה: <b>0.1 0.3</b> או <b>20 10 30</b>)</div>
+      <div class="row" style="margin-top:8px">
+        <div class="grow"><input id="manual" type="text" placeholder="לדוגמה: 0.1 0.3 או 20 10 30" /></div>
+        <button class="btn primary" id="calcBtn">חשב</button>
+      </div>
+
+      <div class="small" id="manualNote"></div>
+    </aside>
   </div>
+</div>
 
 <script>
-  // =========================
-  // 1) Helpers (בטוחים)
-  // =========================
-  const safe = v => (v === null || v === undefined) ? "" : String(v);
-  const norm = s => safe(s).trim().toLowerCase();
+  // --- helpers ---
+  const norm = (s) => (s ?? "").toString().trim().toLowerCase().replace(/\s+/g," ");
+  const safe = (s) => (s ?? "").toString().trim();
+  const escapeHtml = (s) => (s ?? "").toString()
+    .replaceAll("&","&amp;").replaceAll("<","&lt;")
+    .replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
 
-  // ממיר 0.3 ל-30, משאיר 20 כ-20
-  function toPercentNumber(v){
-    const n = Number(v);
-    if(!Number.isFinite(n)) return null;
-    if(n > 0 && n < 1) return n * 100;
-    return n;
-  }
+  const nowStamp = () => {
+    const d = new Date();
+    const pad = (n) => String(n).padStart(2,"0");
+    return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}, ${pad(d.getDate())}.${pad(d.getMonth()+1)}.${d.getFullYear()}`;
+  };
 
-  // נוסחת שקלול: A + (100-A)*B/100 ...
-  function calcCombined(percs){
-    const nums = percs
-      .map(toPercentNumber)
-      .filter(x => x !== null && x >= 0)
-      .sort((a,b)=>b-a);
+  // weighted disability calc: combine percents using 1 - Π(1-p)
+  const weighted = (arr) => {
+    const ps = arr
+      .map(x => Number(x))
+      .filter(x => !Number.isNaN(x))
+      .map(x => x > 1 ? x/100 : x); // allow 20 as 0.2
+    if (!ps.length) return null;
+    const prod = ps.reduce((acc,p)=> acc*(1-p), 1);
+    return 1 - prod;
+  };
 
-    if(!nums.length) return 0;
+  const toPercentNumber = (x) => {
+    if (x === null || x === undefined) return null;
+    const n = Number(x);
+    if (Number.isNaN(n)) return null;
+    // if already 0.1-1.0 keep percent = round(100*n)
+    if (n <= 1.5) return Math.round(n * 100);
+    return Math.round(n);
+  };
 
-    let comb = nums[0];
-    for(let i=1;i<nums.length;i++){
-      comb = comb + (100 - comb) * (nums[i] / 100);
-    }
-    return comb;
-  }
-
-  // =========================
-  // 2) Data loading + normalize
-  // =========================
+  // --- state ---
   let DATA = [];
-  let SYSTEMS = [];
-  let CART = []; // items: {id, title, percent}
+  let FILTERED = [];
+  let PICKED = [];     // rows chosen (for calc)
+  let PICKED_KEYS = new Set();
 
-  function normalizeRow(row, idx){
-    // ננסה לתמוך גם במפתחות באנגלית וגם בעברית
-    const disease =
-      safe(row.disease || row.name || row.title || row["מחלה"] || row["ממצא"] || row["אבחנה"] || "");
+  const $ = (id)=>document.getElementById(id);
+
+  function normalizeRow(row){
+    const system = safe(row.system || row["מערכת"] || row.sys || "");
+    const disease = safe(row.disease || row["מחלה"] || row.name || row.title || "");
+    const sub_disease = safe(row.sub_disease || row.subDisease || row["תת מחלה"] || row.sub || row.en || "");
     const subtitle =
-      safe(row.subtitle || row.details || row.desc || row["פירוט"] || row["תיאור"] || "");
-    const system =
-      safe(row.system || row.category || row["מערכת"] || row["קטגוריה"] || "");
+      safe(row.subtitle || row.condition || row.criteria || row.details || row.desc || row.description || row.rule || row["תנאי רפואי"] || row["תנאי"] || row["פירוט"] || row["תיאור"] || "");
+
     const percentRaw =
       row.percent ?? row.pct ?? row["אחוז"] ?? row["אחוז נכות"] ?? row["percent"] ?? row["pct"];
 
     const percent = toPercentNumber(percentRaw);
 
-    const id = safe(row.id || row.code || row["קוד"] || "") || ("row-" + idx);
-
-    return {
-      id,
-      disease: disease || "ללא שם",
-      subtitle,
-      system,
-      percent: (percent === null ? null : percent)
-    };
+    const key = norm([system,disease,sub_disease,subtitle,percent].join("|"));
+    return { system, disease, sub_disease, subtitle, percent, _key:key };
   }
 
-  async function loadData(){
-    // cache-bust קטן כדי שלא תתקעי על גרסה ישנה
-    const url = "disability_table.json?v=" + Date.now();
-    const res = await fetch(url);
-    const json = await res.json();
+  function rebuildSystems(){
+    const set = new Set(DATA.map(r=>r.system).filter(Boolean));
+    const systems = Array.from(set).sort((a,b)=>a.localeCompare(b,"he"));
+    const sel = $("systemSel");
+    sel.innerHTML = `<option value="">כל המערכות</option>` + systems.map(s=>`<option>${escapeHtml(s)}</option>`).join("");
+  }
 
-    const arr = Array.isArray(json) ? json : (Array.isArray(json.data) ? json.data : []);
-    DATA = arr.map(normalizeRow);
-
-    SYSTEMS = [...new Set(DATA.map(x=>safe(x.system)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'he'));
-    renderSystems();
-    updateCounts();
+  function applyFilter(){
+    const q = norm($("q").value);
+    const sys = $("systemSel").value;
+    FILTERED = DATA.filter(r=>{
+      if (sys && r.system !== sys) return false;
+      if (!q) return true;
+      const hay = norm([r.system,r.disease,r.sub_disease,r.subtitle].join(" "));
+      return hay.includes(q);
+    });
     renderResults();
   }
 
-  function renderSystems(){
-    const sel = document.getElementById("systemSelect");
-    const current = sel.value;
-    sel.innerHTML = `<option value="">כל המערכות</option>` + SYSTEMS.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
-    sel.value = current || "";
-  }
-
-  function updateCounts(){
-    document.getElementById("count").textContent = String(DATA.length);
-    document.getElementById("cartCount").textContent = String(CART.length);
-  }
-
-  // =========================
-  // 3) Search + Render
-  // =========================
-  function escapeHtml(str){
-    return safe(str)
-      .replaceAll("&","&amp;")
-      .replaceAll("<","&lt;")
-      .replaceAll(">","&gt;")
-      .replaceAll('"',"&quot;")
-      .replaceAll("'","&#039;");
-  }
-
-  function matches(row, term, sys){
-    if(sys && norm(row.system) !== norm(sys)) return false;
-    if(!term) return true;
-    const t = norm(term);
-    return norm(row.disease).includes(t) || norm(row.subtitle).includes(t) || norm(row.system).includes(t);
-  }
-
   function renderResults(){
-    const term = document.getElementById("searchInput").value;
-    const sys  = document.getElementById("systemSelect").value;
-
-    const list = DATA.filter(r => matches(r, term, sys)).slice(0, 200); // כדי לא להכביד
-    const box = document.getElementById("results");
-
-    if(!list.length){
-      box.innerHTML = `<div class="ghost">לא נמצאו תוצאות</div>`;
-      return;
-    }
-
-    box.innerHTML = list.map(r => {
-      const pct = (r.percent === null) ? "" : (Math.round(r.percent) + "%");
-      const titleLine = `${escapeHtml(r.disease)}`;
-      const sub = r.subtitle ? `<div class="subLine">${escapeHtml(r.subtitle)}</div>` : "";
-      const meta = `
-        <div class="meta"><b>מערכת:</b> ${escapeHtml(r.system || "—")}</div>
-        <div class="meta"><b>תנאי:</b> ${escapeHtml((r.percent === null) ? "—" : String(r.percent/100).replace(/\.0$/,""))}</div>
-      `;
-
-      // "תנאי" מוצג כמו שהיה אצלך (0.3 וכו') כדי שתראי מקור,
-      // אבל האחוז ליד הכפתור והסל — באחוזים אמיתיים.
-      const conditionShown = (r.percent === null) ? "—" : ( (r.percent/100).toString() );
-
+    $("results").innerHTML = FILTERED.map(r=>{
+      const chosen = PICKED_KEYS.has(r._key);
+      const percentShown = (r.percent === null) ? "—" : `${r.percent}%`;
+      const conditionShown = r.subtitle ? r.subtitle : "—";
       return `
         <div class="item">
-          <div class="pctBox">
-            <div class="plusBtn" title="הוסף" data-add="${escapeHtml(r.id)}">+</div>
-            <div>${pct || "—"}</div>
-          </div>
           <div>
-            <div class="titleLine">${titleLine}</div>
-            ${sub}
+            <div class="title">${escapeHtml(r.disease || "—")}</div>
+            <div class="en">${escapeHtml(r.sub_disease || "")}</div>
             <div class="meta"><b>מערכת:</b> ${escapeHtml(r.system || "—")}</div>
             <div class="meta"><b>תנאי:</b> ${escapeHtml(conditionShown)}</div>
+            <div class="meta"><b>תוצאה:</b> ${escapeHtml((r.percent===null) ? "—" : String(r.percent/100).replace(/\.0$/,""))}</div>
+          </div>
+          <div class="pctBox">
+            <div class="pct">${escapeHtml(percentShown)}</div>
+            <button class="plusBtn ${chosen ? "active":""}" data-key="${escapeHtml(r._key)}" title="הוספה לשקלול">+</button>
           </div>
         </div>
       `;
     }).join("");
 
-    // bind add buttons
-    box.querySelectorAll("[data-add]").forEach(btn=>{
-      btn.addEventListener("click", ()=>{
-        const id = btn.getAttribute("data-add");
-        const row = DATA.find(x=>x.id===id);
-        if(!row) return;
-        if(row.percent === null) return alert("אין אחוז לרשומה הזו");
-        addToCart(row);
-      });
+    $("statusLine").textContent = FILTERED.length ? `נמצאו ${FILTERED.length} תוצאות` : "אין תוצאות";
+
+    // bind
+    document.querySelectorAll(".plusBtn").forEach(btn=>{
+      btn.onclick = ()=>{
+        const key = btn.getAttribute("data-key");
+        const row = DATA.find(x=>x._key===key);
+        if (!row) return;
+        togglePick(row);
+      };
     });
   }
 
-  function addToCart(row){
-    // לא מוסיפים אותו ID פעמיים
-    if(CART.some(x=>x.id===row.id)) return;
+  function togglePick(row){
+    if (PICKED_KEYS.has(row._key)){
+      PICKED_KEYS.delete(row._key);
+      PICKED = PICKED.filter(x=>x._key!==row._key);
+    } else {
+      PICKED_KEYS.add(row._key);
+      PICKED.push(row);
+    }
+    updatePickedUI();
+    renderResults();
+  }
 
-    CART.push({
-      id: row.id,
-      title: row.disease,
-      percent: row.percent
+  function updatePickedUI(){
+    $("pickedCount").textContent = PICKED.length;
+    $("pickedCount2").textContent = PICKED.length;
+    // chips
+    $("chips").innerHTML = PICKED.map(r=>{
+      const label = `${r.disease} (${r.percent ?? "—"}%)`;
+      return `<span class="chip">${escapeHtml(label)} <button data-key="${escapeHtml(r._key)}">×</button></span>`;
+    }).join("");
+
+    document.querySelectorAll(".chip button").forEach(b=>{
+      b.onclick = ()=>{
+        const key = b.getAttribute("data-key");
+        const row = DATA.find(x=>x._key===key);
+        if (row) togglePick(row);
+      }
     });
 
-    recalcCart();
+    // weighted output
+    const nums = PICKED.map(r=> (r.percent===null? null : r.percent/100)).filter(x=>x!==null);
+    const w = weighted(nums);
+    $("weightedOut").textContent = (w===null) ? "—" : `${Math.round(w*100)}%`;
   }
 
-  function removeFromCart(id){
-    CART = CART.filter(x=>x.id!==id);
-    recalcCart();
-  }
-
-  function recalcCart(){
-    updateCounts();
-
-    const total = calcCombined(CART.map(x=>x.percent));
-    document.getElementById("totalPct").textContent = CART.length ? (total.toFixed(1) + "%") : "—";
-
-    const cartList = document.getElementById("cartList");
-    if(!CART.length){
-      cartList.innerHTML = `<div class="ghost" style="margin-top:8px">אין רשומות בסל</div>`;
+  // manual calc
+  function runManual(){
+    const raw = $("manual").value.trim();
+    if (!raw){
+      $("manualNote").textContent = "";
       return;
     }
-
-    cartList.innerHTML = CART.map(x => `
-      <div class="cartRow">
-        <div>
-          <div class="cartName">${escapeHtml(x.title)}</div>
-          <div class="small">${Math.round(x.percent)}%</div>
-        </div>
-        <div class="minusBtn" title="הסר" data-remove="${escapeHtml(x.id)}">—</div>
-      </div>
-    `).join("");
-
-    cartList.querySelectorAll("[data-remove]").forEach(btn=>{
-      btn.addEventListener("click", ()=>{
-        removeFromCart(btn.getAttribute("data-remove"));
-      });
-    });
+    const parts = raw.split(/[\s,]+/).filter(Boolean).map(Number).filter(x=>!Number.isNaN(x));
+    const w = weighted(parts);
+    $("manualNote").textContent = (w===null) ? "לא זוהו מספרים" : `תוצאה: ${Math.round(w*100)}%  (כלומר ${w.toFixed(3)})`;
   }
 
-  // =========================
-  // 4) Events
-  // =========================
-  document.getElementById("searchInput").addEventListener("input", renderResults);
-  document.getElementById("systemSelect").addEventListener("change", renderResults);
+  async function load(){
+    $("stamp").textContent = `גרסה: ${nowStamp()}`;
+    try{
+      const res = await fetch("disability_table.json", { cache:"no-store" });
+      if (!res.ok) throw new Error("שגיאה בטעינת הנתונים. בדקי שקובץ disability_table.json קיים בריפו.");
+      const raw = await res.json();
+      DATA = (raw || []).map(normalizeRow).filter(r=>r.system || r.disease || r.sub_disease || r.subtitle);
+      rebuildSystems();
+      FILTERED = DATA.slice(0);
+      renderResults();
+      updatePickedUI();
+    } catch(e){
+      $("results").innerHTML = `<div class="muted">שגיאה בטעינת הנתונים. בדקי שקובץ disability_table.json קיים בריפו.</div>`;
+      $("statusLine").textContent = String(e.message || e);
+      console.error(e);
+    }
+  }
 
-  document.getElementById("searchBtn").addEventListener("click", ()=>{
-    document.getElementById("searchInput").value = "";
-    document.getElementById("systemSelect").value = "";
+  // events
+  $("q").addEventListener("input", applyFilter);
+  $("systemSel").addEventListener("change", applyFilter);
+  $("searchBtn").addEventListener("click", ()=>{
+    $("q").value="";
+    $("systemSel").value="";
+    applyFilter();
+  });
+  $("clearPicked").addEventListener("click", ()=>{
+    PICKED = [];
+    PICKED_KEYS.clear();
+    updatePickedUI();
     renderResults();
   });
-
-  document.getElementById("clearCartBtn").addEventListener("click", ()=>{
-    CART = [];
-    recalcCart();
+  $("clearCalc").addEventListener("click", ()=>{
+    PICKED = [];
+    PICKED_KEYS.clear();
+    $("manual").value="";
+    $("manualNote").textContent="";
+    updatePickedUI();
+    renderResults();
   });
+  $("calcBtn").addEventListener("click", runManual);
+  $("manual").addEventListener("input", runManual);
 
-  document.getElementById("copyBtn").addEventListener("click", async ()=>{
-    const total = calcCombined(CART.map(x=>x.percent));
-    const text = CART.length ? ("סה\"כ נכות משוקלל: " + Math.round(total) + "%") : "אין רשומות";
+  $("copyResult").addEventListener("click", async ()=>{
+    const txt = $("weightedOut").textContent;
     try{
-      await navigator.clipboard.writeText(text);
-      alert("הועתק ✅");
-    }catch(e){
-      alert(text);
+      await navigator.clipboard.writeText(txt);
+      $("copyResult").textContent = "הועתק!";
+      setTimeout(()=>$("copyResult").textContent="העתק תוצאה", 900);
+    }catch{
+      alert("לא הצלחתי להעתיק. תעתיקי ידנית: " + txt);
     }
   });
 
-  document.getElementById("manualCalcBtn").addEventListener("click", ()=>{
-    const raw = document.getElementById("manualInput").value || "";
-    const parts = raw.split(/[\s,]+/).filter(Boolean);
-    const total = calcCombined(parts);
-    document.getElementById("manualOut").textContent = parts.length ? ("סה\"כ: " + total.toFixed(1) + "%") : "";
-  });
-
-  // =========================
-  // 5) Boot
-  // =========================
-  (function(){
-    const d = new Date();
-    document.getElementById("ver").textContent = "גרסה: " + d.toLocaleString("he-IL");
-    recalcCart();
-    loadData().catch(err=>{
-      console.error(err);
-      document.getElementById("results").innerHTML =
-        `<div class="ghost">שגיאה בטעינת הנתונים. בדקי שהקובץ disability_table.json קיים בריפו.</div>`;
-    });
-  })();
+  load();
 </script>
-
 </body>
 </html>
