@@ -79,7 +79,11 @@
     }
     .title{ font-size:22px; font-weight:900; line-height:1.1; margin:0; }
     .en{ margin-top:4px; color:#111827; opacity:.9; font-size:18px; font-weight:800; }
-    .meta{ margin-top:6px; color:var(--muted); font-size:14px; line-height:1.4; }
+    .meta{
+      margin-top:6px; color:var(--muted); font-size:14px; line-height:1.4;
+      white-space: normal;
+      word-break: break-word;
+    }
     .meta b{color:#374151}
     .pctBox{
       text-align:center; min-width:120px; position:relative;
@@ -197,6 +201,9 @@
 </div>
 
 <script>
+  // ==== VERSION MARKER ====
+  const INDEX_VERSION = "INDEX_CONDITION_TEXT_V1";
+
   const norm = (s) => (s ?? "").toString().trim().toLowerCase().replace(/\s+/g," ");
   const safe = (s) => (s ?? "").toString().trim();
   const escapeHtml = (s) => (s ?? "").toString()
@@ -239,16 +246,24 @@
     const disease = safe(row.disease || row["מחלה"] || row.name || row.title || "");
     const sub_disease = safe(row.sub_disease || row.subDisease || row["תת מחלה"] || row.sub || row.en || "");
 
-    // ✅ כאן הפתרון: מושכים את התנאי מהשדה condition / תנאי רפואי
+    // ✅ תנאי רפואי: רק טקסט. אין פה שום שימוש באחוז/תוצאה.
     const condition = safe(
-      row.condition || row["תנאי רפואי"] || row["תנאי"] || row.subtitle || row.details || row.desc || row["פירוט"] || row["תיאור"] || ""
+      row.condition ||
+      row["תנאי רפואי"] ||
+      row["תנאי"] ||
+      row.subtitle ||
+      row.details ||
+      row.desc ||
+      row["פירוט"] ||
+      row["תיאור"] ||
+      ""
     );
 
     const percentRaw =
       row.percent ?? row.pct ?? row["אחוז"] ?? row["אחוז נכות"] ?? row["percent"] ?? row["pct"];
-
     const percent = toPercentNumber(percentRaw);
 
+    // תוצאה משוקללת/מספרית (אם קיים)
     const resultRaw = row.result ?? row.value ?? row["תוצאה"];
     const result = (resultRaw === null || resultRaw === undefined || Number.isNaN(Number(resultRaw))) ? null : Number(resultRaw);
 
@@ -278,8 +293,13 @@
   function renderResults(){
     $("results").innerHTML = FILTERED.map(r=>{
       const chosen = PICKED_KEYS.has(r._key);
+
       const percentShown = (r.percent === null) ? "—" : `${r.percent}%`;
+
+      // ✅ זה התנאי שמופיע בכרטיס – טקסט בלבד
       const conditionShown = r.condition ? r.condition : "—";
+
+      // תוצאה מספרית אם קיימת (לא קשורה לתנאי!)
       const resultShown = (r.result === null) ? "—" : String(r.result).replace(/\.0$/,"");
 
       return `
@@ -357,7 +377,8 @@
   }
 
   async function load(){
-    $("stamp").textContent = `גרסה: ${nowStamp()}`;
+    $("stamp").textContent = `גרסה: ${nowStamp()} | ${INDEX_VERSION}`;
+
     try{
       // cache bust כדי שלא יתקע על גרסה ישנה
       const url = "disability_table.json?v=" + Date.now();
@@ -370,6 +391,10 @@
       FILTERED = DATA.slice(0);
       renderResults();
       updatePickedUI();
+
+      // DEBUG: תראי בקונסול מה נכנס לקליינט
+      console.log("INDEX_VERSION:", INDEX_VERSION);
+      console.log("SAMPLE_ROW_CONDITION:", DATA?.[0]?.condition);
     } catch(e){
       $("results").innerHTML = `<div class="muted">שגיאה בטעינת הנתונים. בדקי שקובץ disability_table.json קיים בריפו.</div>`;
       $("statusLine").textContent = String(e.message || e);
