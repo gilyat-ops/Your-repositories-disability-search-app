@@ -19,7 +19,7 @@
 <body>
 
 <div class="top">
-  <input id="q" placeholder="חיפוש חופשי…" style="flex:1;min-width:240px"/>
+  <input id="q" placeholder="הקלידי מחלה / מערכת / ממצא…"/>
   <select id="sys"><option value="">כל המערכות</option></select>
   <button id="clear">ניקוי</button>
 </div>
@@ -28,48 +28,15 @@
 <div class="grid" id="results"></div>
 
 <script>
-const INDEX_VERSION = "FIX_CONDITION_V3";
-console.log("INDEX_VERSION", INDEX_VERSION);
-
-const safe = (x)=> (x??"").toString().trim();
-const norm = (x)=> safe(x).toLowerCase().replace(/\s+/g," ");
+const safe = x => (x??"").toString().trim();
+const norm = x => safe(x).toLowerCase().replace(/\s+/g," ");
 
 let DATA = [];
-let FILTERED = [];
 
-function getCondition(r){
-  // תופס גם אם קראת לזה אחרת ב-JSON
-  return safe(
-    r.condition ??
-    r["תנאי רפואי"] ??
-    r["תנאי"] ??
-    r.subtitle ??
-    r.details ??
-    r.desc ??
-    ""
-  ) || "—";
-}
-
-function getSystem(r){
-  return safe(r.system ?? r["מערכת"] ?? r.sys ?? "") || "—";
-}
-
-function getDisease(r){
-  return safe(r.disease ?? r["מחלה"] ?? r.title ?? r.name ?? "") || "—";
-}
-
-function getSub(r){
-  return safe(r.sub_disease ?? r["תת מחלה"] ?? r.sub ?? r.en ?? "");
-}
-
-function getPercent(r){
-  const p = r.percent ?? r["אחוז"] ?? r["אחוז נכות"];
-  if (p===0) return "0%";
-  if (!p) return "—";
-  const n = Number(p);
-  if (Number.isNaN(n)) return "—";
-  return (n<=1.5 ? Math.round(n*100) : Math.round(n)) + "%";
-}
+const getCondition = r => safe(r.condition ?? r["תנאי רפואי"] ?? r["תנאי"] ?? "") || "—";
+const getSystem = r => safe(r.system ?? r["מערכת"] ?? r.sys ?? "") || "—";
+const getDisease = r => safe(r.disease ?? r["מחלה"] ?? r.title ?? r.name ?? "") || "—";
+const getPercent = r => r.percent ? r.percent + "%" : "—";
 
 function rebuildSystems(){
   const sel = document.getElementById("sys");
@@ -78,62 +45,37 @@ function rebuildSystems(){
   sel.innerHTML = `<option value="">כל המערכות</option>` + arr.map(s=>`<option>${s}</option>`).join("");
 }
 
-function apply(){
-  const q = norm(document.getElementById("q").value);
-  const sys = document.getElementById("sys").value;
-  FILTERED = DATA.filter(r=>{
-    if (sys && getSystem(r)!==sys) return false;
-    if (!q) return true;
-    const hay = norm([getSystem(r), getDisease(r), getSub(r), getCondition(r)].join(" "));
-    return hay.includes(q);
-  });
-  render();
-}
-
 function render(){
-  document.getElementById("status").textContent = `נמצאו ${FILTERED.length} תוצאות`;
-  document.getElementById("results").innerHTML = FILTERED.map(r=>{
-    const cond = getCondition(r);
-    return `
-      <div class="item">
-        <div>
-          <div class="title">${getDisease(r)}</div>
-          <div class="meta"><b>מערכת:</b> ${getSystem(r)}</div>
-          <div class="meta"><b>תנאי:</b> ${cond}</div>
-        </div>
-        <div class="pct">${getPercent(r)}</div>
+  document.getElementById("status").textContent = `נמצאו ${DATA.length} רשומות`;
+  document.getElementById("results").innerHTML = DATA.map(r=>`
+    <div class="item">
+      <div>
+        <div class="title">${getDisease(r)}</div>
+        <div class="meta"><b>מערכת:</b> ${getSystem(r)}</div>
+        <div class="meta"><b>תנאי:</b> ${getCondition(r)}</div>
       </div>
-    `;
-  }).join("");
+      <div class="pct">${getPercent(r)}</div>
+    </div>
+  `).join("");
 }
 
 async function load(){
-  const res = await fetch("disability_table.json?v=" + Date.now(), {cache:"no-store"});
-  const txt = await res.text();
-  console.log("JSON_HAS_condition_word", txt.includes('"condition"'));
-  const raw = JSON.parse(txt);
-
-  DATA = Array.isArray(raw) ? raw : (raw.data ?? []);
-  console.log("FIRST_ROW_KEYS", Object.keys(DATA[0]||{}));
-  console.log("FIRST_ROW_CONDITION", getCondition(DATA[0]||{}));
-
-  rebuildSystems();
-  FILTERED = DATA.slice();
-  render();
+  try{
+    const res = await fetch("disability_table.json?v=" + Date.now(), {cache:"no-store"});
+    const d = await res.json();
+    DATA = d;
+    rebuildSystems();
+    render();
+  }catch(e){
+    console.error(e);
+    document.getElementById("status").textContent = "שגיאה בטעינת הנתונים";
+  }
 }
 
-document.getElementById("q").addEventListener("input", apply);
-document.getElementById("sys").addEventListener("change", apply);
-document.getElementById("clear").addEventListener("click", ()=>{
-  document.getElementById("q").value="";
-  document.getElementById("sys").value="";
-  apply();
-});
+document.getElementById("q").addEventListener("input", ()=>{});
+document.getElementById("clear").addEventListener("click", ()=>{});
 
-load().catch(e=>{
-  console.error(e);
-  document.getElementById("status").textContent = "שגיאה בטעינת הנתונים";
-});
+load();
 </script>
 </body>
 </html>
