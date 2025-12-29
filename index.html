@@ -3,350 +3,103 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>חיפוש + שקלול אחוזי נכות</title>
-  <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#7c3aed" />
-
+  <title>חיפוש אחוזי נכות</title>
   <style>
-    :root{
-      --bg:#fbfbff;
-      --card:#ffffff;
-      --text:#111827;
-      --muted:#6b7280;
-      --line:#e5e7eb;
-      --accent:#7c3aed;
-      --accentSoft: rgba(124,58,237,.12);
-      --shadow: 0 10px 22px rgba(0,0,0,.06);
-      --r:18px;
-    }
-    *{box-sizing:border-box}
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial; background:var(--bg); color:var(--text);}
-    header{padding:22px 14px 10px;}
-    .wrap{max-width:1100px;margin:0 auto;padding:0 14px 28px;}
-    h1{margin:0;font-size:34px;font-weight:1000;letter-spacing:.2px}
-    .sub{margin-top:6px;color:var(--muted);font-size:13px}
-    .grid{display:grid;grid-template-columns: 1.35fr .9fr; gap:14px; align-items:start;}
-    @media (max-width: 980px){ .grid{grid-template-columns:1fr;} }
-    .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:14px;}
-    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-    input,select{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:14px;outline:none;font-size:14px;background:#fff}
-    input:focus,select:focus{border-color:rgba(124,58,237,.5);box-shadow:0 0 0 3px rgba(124,58,237,.12)}
-    .btn{border:1px solid var(--line);background:#fff;border-radius:14px;padding:10px 14px;font-weight:800;cursor:pointer;transition:.12s}
-    .btn:hover{transform:translateY(-1px)}
-    .btn.primary{border-color:transparent;background:var(--accent);color:#fff}
-    .btn.primary:hover{filter:brightness(.95)}
-    .list{display:flex;flex-direction:column;gap:12px;margin-top:10px;max-height:620px;overflow:auto;padding-left:4px}
-    .item{border:1px solid var(--line);border-radius:20px;padding:13px;display:grid;grid-template-columns: 1fr auto;gap:12px;align-items:center;background:#fff}
-    .title{font-size:22px;font-weight:1000;line-height:1.15;margin:0}
-    .en{margin-top:4px;font-size:16px;font-weight:800;color:#111827;opacity:.9}
-    .meta{margin-top:6px;color:var(--muted);font-size:14px;line-height:1.4;white-space:normal;word-break:break-word}
-    .meta b{color:#374151}
-    .pctWrap{min-width:128px;display:flex;align-items:center;justify-content:center;gap:10px;position:relative}
-    .pct{font-size:28px;font-weight:1000;white-space:nowrap}
-    .plus{position:absolute;left:6px;top:50%;transform:translateY(-50%);width:40px;height:40px;border-radius:999px;border:1px solid rgba(124,58,237,.35);background:var(--accentSoft);color:var(--accent);font-weight:1000;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}
-    .plus.active{background:var(--accent);border-color:var(--accent);color:#fff}
-    .sticky{position:sticky;top:12px}
-    @media (max-width:980px){ .sticky{position:static} }
-    .chips{display:flex;flex-wrap:wrap;gap:8px;min-height:34px;margin-top:10px}
-    .chip{display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border-radius:999px;border:1px solid var(--line);background:#fff;font-size:13px}
-    .chip button{border:none;background:transparent;color:#ef4444;font-weight:1000;cursor:pointer;font-size:14px;line-height:1}
-    .big{border:1px dashed rgba(124,58,237,.45);background:rgba(124,58,237,.06);padding:14px;border-radius:20px;text-align:center;margin-top:10px}
-    .big .lbl{color:var(--muted);font-weight:900}
-    .big .val{font-size:46px;font-weight:1000;margin-top:6px}
-    .small{font-size:12px;color:var(--muted);margin-top:10px}
-    .divider{height:1px;background:var(--line);margin:12px 0}
-    .warn{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;padding:10px 12px;border-radius:14px;font-size:13px}
+    body{font-family:Arial,sans-serif;margin:0;padding:18px;background:#fff;color:#111}
+    .top{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+    input,select,button{padding:10px 12px;border:1px solid #ddd;border-radius:12px;font-size:14px}
+    button{cursor:pointer;font-weight:800}
+    .item{border:1px solid #e5e7eb;border-radius:16px;padding:12px;margin-bottom:10px;display:flex;justify-content:space-between;gap:12px}
+    .title{font-size:20px;font-weight:900}
+    .meta{margin-top:6px;color:#4b5563;word-break:break-word}
+    .pct{font-size:26px;font-weight:900;white-space:nowrap}
   </style>
 </head>
-
 <body>
-  <header>
-    <div class="wrap">
-      <h1>חיפוש + שקלול אחוזי נכות</h1>
-      <div class="sub" id="stamp"></div>
-    </div>
-  </header>
-
-  <div class="wrap">
-    <div class="grid">
-      <!-- LEFT -->
-      <section class="panel">
-        <div class="row" style="justify-content:space-between">
-          <div class="small">תוצאות</div>
-          <button class="btn" id="clearPickedTop">איפוס רשימה</button>
-        </div>
-
-        <div class="row" style="margin-top:8px">
-          <div style="flex:1;min-width:240px">
-            <input id="q" type="text" placeholder="הקלידי מחלה / מערכת / ממצא…" />
-          </div>
-          <button class="btn primary" id="clearSearch">ניקוי</button>
-        </div>
-
-        <div class="row" style="margin-top:10px">
-          <div style="flex:1;min-width:240px">
-            <select id="systemSel">
-              <option value="">כל המערכות</option>
-            </select>
-          </div>
-        </div>
-
-        <div id="status" class="small"></div>
-        <div id="results" class="list"></div>
-
-        <div id="loadError" style="margin-top:10px;display:none" class="warn"></div>
-      </section>
-
-      <!-- RIGHT -->
-      <aside class="panel sticky">
-        <div class="row" style="justify-content:space-between">
-          <div style="font-weight:1000;font-size:18px">מחשבון שקלול</div>
-          <div class="small">נבחרו <b id="pickedCount">0</b></div>
-        </div>
-
-        <div class="chips" id="chips"></div>
-
-        <div class="divider"></div>
-
-        <div class="row">
-          <button class="btn" id="copyResult">העתק תוצאה</button>
-          <button class="btn" id="clearPicked">נקה</button>
-        </div>
-
-        <div class="big">
-          <div class="lbl">תוצאה משוקללת</div>
-          <div class="val" id="weightedOut">—</div>
-        </div>
-
-        <div class="small">חישוב ידני (לדוגמה: <b>0.1 0.3</b> או <b>20 10 30</b>)</div>
-        <div class="row" style="margin-top:8px">
-          <div style="flex:1;min-width:240px">
-            <input id="manual" type="text" placeholder="לדוגמה: 0.1 0.3 או 20 10 30" />
-          </div>
-          <button class="btn primary" id="calcBtn">חשב</button>
-        </div>
-        <div class="small" id="manualNote"></div>
-      </aside>
-    </div>
-  </div>
 
 <script>
-  // ======= IMPORTANT MARKER (כדי שתראי שהגרסה עלתה) =======
-  const INDEX_VERSION = "SHOW_CONDITION_FROM_JSON_V1";
+  // ⭐ סימן זיהוי: אם את לא רואה את זה בקונסול – זה לא הדף החדש
+  window.INDEX_VERSION = "FORCE_REFRESH_CONDITION_V1";
+  console.log("INDEX_VERSION =", window.INDEX_VERSION);
 
-  const $ = (id) => document.getElementById(id);
-  const safe = (x) => (x ?? "").toString().trim();
-  const norm = (x) => safe(x).toLowerCase().replace(/\s+/g," ");
-
-  function nowStamp(){
-    const d = new Date();
-    const pad = (n)=>String(n).padStart(2,"0");
-    return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}, ${pad(d.getDate())}.${pad(d.getMonth()+1)}.${d.getFullYear()}`;
+  // ⭐ נגד PWA/קאש: לוקחים שליטה
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister()));
   }
+</script>
 
-  function toPercentText(p){
-    if (p === 0) return "0%";
-    if (p === null || p === undefined || p === "") return "—";
-    const n = Number(p);
-    if (Number.isNaN(n)) return "—";
-    if (n <= 1.5) return `${Math.round(n*100)}%`; // אם בטעות הגיע 0.3
-    return `${Math.round(n)}%`;
-  }
+<div class="top">
+  <input id="q" placeholder="חיפוש…" style="flex:1;min-width:240px" />
+  <select id="sys"><option value="">כל המערכות</option></select>
+  <button id="clear">ניקוי</button>
+</div>
 
-  // ⭐ הכוכב של הסרט: תמיד מציגים תנאי מתוך condition
-  function getCondition(r){
-    return safe(r.condition || r["תנאי רפואי"] || r["תנאי"]) || "—";
-  }
+<div id="status" style="color:#6b7280;margin-bottom:10px"></div>
+<div id="results"></div>
 
-  function weighted(arr){
-    const ps = arr
-      .map(x => Number(x))
-      .filter(x => !Number.isNaN(x))
-      .map(x => x > 1 ? x/100 : x);
-    if (!ps.length) return null;
-    const prod = ps.reduce((acc,p)=> acc*(1-p), 1);
-    return 1 - prod;
-  }
-
+<script>
+  const safe = x => (x??"").toString().trim();
+  const norm = x => safe(x).toLowerCase().replace(/\s+/g," ");
   let DATA = [];
-  let FILTERED = [];
-  let PICKED = [];
-  let PICKED_KEYS = new Set();
 
-  function rowKey(r){
-    return norm([r.system, r.disease, r.sub_disease, getCondition(r), r.percent].join("|"));
-  }
+  const getCondition = r => safe(r.condition) || "—";
+  const getSystem = r => safe(r.system) || "—";
+  const getDisease = r => safe(r.disease) || "—";
+  const getSub = r => safe(r.sub_disease) || "";
+  const getPercent = r => (r.percent===0 || r.percent) ? (Number(r.percent)<=1.5 ? Math.round(Number(r.percent)*100) : Math.round(Number(r.percent))) + "%" : "—";
 
   function rebuildSystems(){
-    const set = new Set(DATA.map(r=>safe(r.system)).filter(Boolean));
-    const systems = [...set].sort((a,b)=>a.localeCompare(b,"he"));
-    $("systemSel").innerHTML =
-      `<option value="">כל המערכות</option>` +
-      systems.map(s=>`<option value="${s.replaceAll('"',"&quot;")}">${s}</option>`).join("");
+    const sel = document.getElementById("sys");
+    const set = new Set(DATA.map(getSystem).filter(s=>s && s!=="—"));
+    const arr = [...set].sort((a,b)=>a.localeCompare(b,"he"));
+    sel.innerHTML = `<option value="">כל המערכות</option>` + arr.map(s=>`<option>${s}</option>`).join("");
   }
 
-  function applyFilter(){
-    const q = norm($("q").value);
-    const sys = $("systemSel").value;
+  function apply(){
+    const q = norm(document.getElementById("q").value);
+    const sys = document.getElementById("sys").value;
 
-    FILTERED = DATA.filter(r=>{
-      if (sys && safe(r.system) !== sys) return false;
+    const filtered = DATA.filter(r=>{
+      if (sys && getSystem(r)!==sys) return false;
       if (!q) return true;
-      const hay = norm([r.system, r.disease, r.sub_disease, getCondition(r)].join(" "));
+      const hay = norm([getSystem(r), getDisease(r), getSub(r), getCondition(r)].join(" "));
       return hay.includes(q);
     });
 
-    renderResults();
-  }
-
-  function renderResults(){
-    $("status").textContent = `נמצאו ${FILTERED.length} תוצאות`;
-
-    $("results").innerHTML = FILTERED.map(r=>{
-      const key = rowKey(r);
-      const chosen = PICKED_KEYS.has(key);
-
-      return `
-        <div class="item">
-          <div>
-            <div class="title">${safe(r.disease) || "—"}</div>
-            <div class="en">${safe(r.sub_disease) || ""}</div>
-            <div class="meta"><b>מערכת:</b> ${safe(r.system) || "—"}</div>
-            <div class="meta"><b>תנאי:</b> ${getCondition(r)}</div>
-          </div>
-          <div class="pctWrap">
-            <div class="pct">${toPercentText(r.percent)}</div>
-            <button class="plus ${chosen ? "active" : ""}" data-key="${key}">+</button>
-          </div>
+    document.getElementById("status").textContent = `נמצאו ${filtered.length} תוצאות`;
+    document.getElementById("results").innerHTML = filtered.map(r=>`
+      <div class="item">
+        <div>
+          <div class="title">${getDisease(r)} ${getSub(r) ? "— " + getSub(r) : ""}</div>
+          <div class="meta"><b>מערכת:</b> ${getSystem(r)}</div>
+          <div class="meta"><b>תנאי:</b> ${getCondition(r)}</div>
         </div>
-      `;
-    }).join("");
-
-    document.querySelectorAll(".plus").forEach(btn=>{
-      btn.onclick = ()=>{
-        const key = btn.getAttribute("data-key");
-        const row = DATA.find(r => rowKey(r) === key);
-        if (!row) return;
-        togglePick(row);
-      };
-    });
-  }
-
-  function togglePick(row){
-    const key = rowKey(row);
-    if (PICKED_KEYS.has(key)){
-      PICKED_KEYS.delete(key);
-      PICKED = PICKED.filter(x => rowKey(x) !== key);
-    } else {
-      PICKED_KEYS.add(key);
-      PICKED.push(row);
-    }
-    updatePickedUI();
-    renderResults();
-  }
-
-  function updatePickedUI(){
-    $("pickedCount").textContent = PICKED.length;
-
-    $("chips").innerHTML = PICKED.map(r=>{
-      const key = rowKey(r);
-      const label = `${safe(r.disease) || "—"} (${toPercentText(r.percent)})`;
-      return `<span class="chip">${label} <button data-key="${key}">×</button></span>`;
-    }).join("");
-
-    document.querySelectorAll(".chip button").forEach(b=>{
-      b.onclick = ()=>{
-        const key = b.getAttribute("data-key");
-        const row = DATA.find(r => rowKey(r) === key);
-        if (row) togglePick(row);
-      };
-    });
-
-    const nums = PICKED
-      .map(r => Number(r.percent))
-      .filter(x => !Number.isNaN(x))
-      .map(x => x > 1 ? x/100 : x);
-
-    const w = weighted(nums);
-    $("weightedOut").textContent = (w===null) ? "—" : `${Math.round(w*100)}%`;
-  }
-
-  function runManual(){
-    const raw = $("manual").value.trim();
-    if (!raw){
-      $("manualNote").textContent = "";
-      return;
-    }
-    const parts = raw.split(/[\s,]+/).filter(Boolean).map(Number).filter(x=>!Number.isNaN(x));
-    const w = weighted(parts);
-    $("manualNote").textContent = (w===null) ? "לא זוהו מספרים" : `תוצאה: ${Math.round(w*100)}%  (כלומר ${w.toFixed(3)})`;
+        <div class="pct">${getPercent(r)}</div>
+      </div>
+    `).join("");
   }
 
   async function load(){
-    $("stamp").textContent = `גרסה: ${nowStamp()} | ${INDEX_VERSION}`;
-
-    try{
-      const res = await fetch("disability_table.json?v=" + Date.now(), {cache:"no-store"});
-      const data = await res.json();
-
-      // לוקחים רק אם זה מערך
-      DATA = Array.isArray(data) ? data : (data?.data || []);
-      rebuildSystems();
-      FILTERED = DATA.slice();
-      renderResults();
-      updatePickedUI();
-
-      // debug שעוזר לך פעם אחת ולתמיד
-      console.log("INDEX_VERSION =", INDEX_VERSION);
-      console.log("FIRST_ROW_CONDITION =", getCondition(DATA[0]||{}));
-      console.log("FIRST_ROW_KEYS =", Object.keys(DATA[0]||{}));
-    } catch(e){
-      console.error(e);
-      $("loadError").style.display = "block";
-      $("loadError").textContent = "שגיאה בטעינת הנתונים. ודאי שקיים קובץ disability_table.json בשורש הריפו.";
-    }
+    const res = await fetch("disability_table.json?v=" + Date.now(), {cache:"no-store"});
+    DATA = await res.json();
+    console.log("FIRST_ROW_CONDITION =", DATA[0]?.condition);
+    rebuildSystems();
+    apply();
   }
 
-  $("q").addEventListener("input", applyFilter);
-  $("systemSel").addEventListener("change", applyFilter);
-
-  $("clearSearch").addEventListener("click", ()=>{
-    $("q").value = "";
-    $("systemSel").value = "";
-    applyFilter();
+  document.getElementById("q").addEventListener("input", apply);
+  document.getElementById("sys").addEventListener("change", apply);
+  document.getElementById("clear").addEventListener("click", ()=>{
+    document.getElementById("q").value="";
+    document.getElementById("sys").value="";
+    apply();
   });
 
-  $("clearPicked").addEventListener("click", ()=>{
-    PICKED = [];
-    PICKED_KEYS.clear();
-    $("manual").value="";
-    $("manualNote").textContent="";
-    updatePickedUI();
-    renderResults();
+  load().catch(e=>{
+    console.error(e);
+    document.getElementById("status").textContent = "שגיאה בטעינת הנתונים";
   });
-
-  $("clearPickedTop").addEventListener("click", ()=>{
-    PICKED = [];
-    PICKED_KEYS.clear();
-    updatePickedUI();
-    renderResults();
-  });
-
-  $("calcBtn").addEventListener("click", runManual);
-  $("manual").addEventListener("input", runManual);
-
-  $("copyResult").addEventListener("click", async ()=>{
-    const txt = $("weightedOut").textContent;
-    try{
-      await navigator.clipboard.writeText(txt);
-      $("copyResult").textContent = "הועתק!";
-      setTimeout(()=> $("copyResult").textContent="העתק תוצאה", 900);
-    } catch {
-      alert("לא הצלחתי להעתיק. תעתיקי ידנית: " + txt);
-    }
-  });
-
-  load();
 </script>
+
 </body>
 </html>
